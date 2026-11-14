@@ -2,7 +2,7 @@
 Options -Indexes
 
 # Chặn mở trực tiếp các file cấu hình / xử lý bên trong
-<FilesMatch "^(config|khoi-dong|xu-ly)\.php$|^composer\.(json|lock)$|\.md$">
+<FilesMatch "^(config|khoi-dong|xu-ly|xu-ly-hoc-sinh)\.php$|^composer\.(json|lock)$|\.md$">
     Require all denied
 </FilesMatch>
 

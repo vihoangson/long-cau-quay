@@ -51,6 +51,20 @@ Yêu cầu: PHP 8.0 trở lên, đã bật `zip`, `xml`, `mbstring` (XAMPP có s
 - Có điền A–D thì máy tự hiểu là câu trắc nghiệm.
 - Dòng nào lỗi sẽ được báo kèm **số dòng**, các dòng đúng vẫn được nhập.
 
+## Quản lý học sinh
+
+Bấm tab **🧒 Học sinh** ở đầu trang (hoặc mở `dashboard/hoc-sinh.php`). Thay đổi được lưu thẳng vào `../long-quay/students.js`.
+
+| Chức năng | Cách dùng |
+|---|---|
+| **Thêm / Sửa** | "➕ Thêm học sinh" (số trên bóng được gợi ý sẵn) hoặc "✏️ Sửa". Số phải từ 1–999 và không trùng |
+| **Vắng / Có mặt** | "🏠 Vắng" để bạn đó **không có bóng trong lồng** hôm nay (ghi `vang: true` trong file), "🎱 Có mặt" để có lại. Chọn nhiều bạn rồi bấm cùng lúc được |
+| **Xóa** | Từng bạn, hoặc tích chọn nhiều bạn |
+| **Đánh số lại** | Sau khi xóa bị hổng số, bấm "🔢 Đánh số lại" để thành 1, 2, 3… |
+| **Nhập** | Dán danh sách (mỗi dòng một bạn, có thể kèm số "1. Nguyễn Văn An" hoặc dán 2 cột từ Excel), hoặc chọn file `.xlsx`, `.csv`, `.txt`, `.json`, `students.js`. Bạn nào không có số / trùng số được tự đánh số tiếp |
+| **Xuất** | File Excel mẫu (cột *Số, Họ và tên, Vắng*) hoặc xuất cả danh sách ra Excel |
+| **Sao lưu** | Bản cũ được tự cất vào `dashboard/backups/students_*.js`, bấm "↩ Khôi phục" để quay lại |
+
 ## An toàn dữ liệu
 
 - **Chống ghi đè:** nếu file `questions.js` vừa bị đổi ở nơi khác (mở hai tab, hoặc vừa sửa tay bằng Notepad), trang sẽ từ chối lưu và tải lại dữ liệu mới, để không làm mất thay đổi kia.

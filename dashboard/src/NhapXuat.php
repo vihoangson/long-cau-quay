@@ -46,7 +46,7 @@ final class NhapXuat
     }
 
     /** File Excel (.xlsx) thực chất là file nén zip, nên PHP cần bật extension "zip". */
-    private static function canZip(): void
+    public static function canZip(): void
     {
         if (!class_exists(\ZipArchive::class)) {
             throw new RuntimeException('PHP đang chạy trang này chưa bật extension "zip" nên chưa đọc/ghi được file Excel. '
@@ -55,17 +55,17 @@ final class NhapXuat
         }
     }
 
-    private static function docXlsx(string $duongDan): array
+    /** Đọc các dòng của file Excel. Ưu tiên trang tính có tên chứa $tenTrang (không dấu), không có thì lấy trang đầu. */
+    public static function docXlsx(string $duongDan, string $tenTrang = 'cau hoi'): array
     {
         self::canZip();
         $xlsx = SimpleXLSX::parse($duongDan);
         if (!$xlsx) {
             throw new RuntimeException('Không đọc được file Excel: ' . SimpleXLSX::parseError());
         }
-        // Ưu tiên trang tính có tên "Câu hỏi", không có thì lấy trang đầu tiên
         $chiSo = 0;
         foreach ($xlsx->sheetNames() as $i => $ten) {
-            if (str_contains(ChuViet::boDau((string) $ten), 'cau hoi')) {
+            if (str_contains(ChuViet::boDau((string) $ten), $tenTrang)) {
                 $chiSo = (int) $i;
                 break;
             }
@@ -73,7 +73,7 @@ final class NhapXuat
         return $xlsx->rows($chiSo) ?: [];
     }
 
-    private static function docCsv(string $duongDan): array
+    public static function docCsv(string $duongDan): array
     {
         $noiDung = (string) file_get_contents($duongDan);
         $noiDung = preg_replace('/^\xEF\xBB\xBF/', '', $noiDung) ?? $noiDung;

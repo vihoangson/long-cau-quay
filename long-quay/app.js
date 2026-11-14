@@ -129,6 +129,8 @@ function docDanhSachHocSinh() {
   const ketQua = [];
   goc.forEach((hs, viTri) => {
     if (!hs || typeof hs !== 'object') return;
+    // Bạn được đánh dấu vắng ("vang": true) thì không có bóng trong lồng
+    if (hs.vang === true) return;
     const so = (hs.so === undefined || hs.so === null || String(hs.so).trim() === '')
       ? String(viTri + 1)
       : String(hs.so).trim();

@@ -6,6 +6,7 @@ declare(strict_types=1);
 // =============================================================
 
 use Dashboard\KhoCauHoi;
+use Dashboard\KhoHocSinh;
 
 if (!is_file(__DIR__ . '/vendor/autoload.php')) {
     http_response_code(500);
@@ -55,6 +56,11 @@ header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
 
 $kho = new KhoCauHoi($cauHinh['file_cau_hoi'], $cauHinh['thu_muc_sao_luu'], (int) $cauHinh['so_ban_sao_luu_giu_lai']);
+$khoHocSinh = new KhoHocSinh(
+    $cauHinh['file_hoc_sinh'] ?? __DIR__ . '/../long-quay/students.js',
+    $cauHinh['thu_muc_sao_luu'],
+    (int) $cauHinh['so_ban_sao_luu_giu_lai']
+);
 
 // ------------------------------------------------------------------
 // HÀM DÙNG CHUNG
@@ -109,10 +115,10 @@ function thamSoLoc(array $nguon): array
     return $ra;
 }
 
-function chuyenHuong(array $thamSo = []): void
+function chuyenHuong(array $thamSo = [], string $trang = 'index.php'): void
 {
     $chuoi = http_build_query($thamSo);
-    header('Location: ' . url('index.php') . ($chuoi === '' ? '' : '?' . $chuoi), true, 303);
+    header('Location: ' . url($trang) . ($chuoi === '' ? '' : '?' . $chuoi), true, 303);
     exit;
 }
 

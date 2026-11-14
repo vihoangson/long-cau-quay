@@ -48,6 +48,10 @@ $oAn = static function (?string $hanhDong) use ($csrf, $phienBan, $boLoc): strin
         <h1>📚 Quản lý câu hỏi</h1>
         <p class="phu-de">Ngân hàng câu hỏi cho <b>Lồng Quay May Mắn</b> – thay đổi ở đây được lưu thẳng vào <code>long-quay/questions.js</code></p>
         <div class="dau-trang-nut">
+            <nav class="tab-trang" aria-label="Chọn trang quản lý">
+                <a href="<?= e(url('index.php')) ?>" class="dang-mo" aria-current="page">📚 Câu hỏi</a>
+                <a href="<?= e(url('hoc-sinh.php')) ?>">🧒 Học sinh</a>
+            </nav>
             <a class="nut nut-sang" href="<?= e(url('../long-quay/index.html')) ?>" target="_blank" rel="noopener">🎡 Mở trang quay số</a>
             <?php if ((string) $cauHinh['mat_khau'] !== ''): ?>
                 <form method="post" class="form-gon">

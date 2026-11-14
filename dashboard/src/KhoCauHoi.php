@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Dashboard;
 
-use RuntimeException;
-
 /**
  * Đọc và ghi ngân hàng câu hỏi trong file long-quay/questions.js.
  *
@@ -20,25 +18,16 @@ use RuntimeException;
  *     'dapAnDung' => 'B',                // chữ cái đáp án đúng (câu trắc nghiệm)
  *   ]
  */
-final class KhoCauHoi
+final class KhoCauHoi extends KhoTepJs
 {
     public const CHU_CAI = ['A', 'B', 'C', 'D'];
     public const DO_DAI_TOI_DA = 600;
-    private const LOI_PHIEN_BAN = 'Danh sách câu hỏi vừa được thay đổi ở nơi khác (tab khác hoặc sửa tay file). Trang đã tải lại dữ liệu mới nhất, thầy cô hãy làm lại thao tác.';
+    protected const TEN_BIEN = 'questions';
+    protected const TIEN_TO = 'questions';
+    protected const TEN_DU_LIEU = 'câu hỏi';
 
     /** Thứ tự các môn khi sắp xếp trong file (môn khác xếp sau, theo thứ tự xuất hiện). */
     private const THU_TU_MON = ['', 'Toán', 'Tiếng Việt', 'Khoa học'];
-
-    public function __construct(
-        private string $duongDanFile,
-        private string $thuMucSaoLuu,
-        private int $soBanSaoLuuGiuLai = 30
-    ) {
-    }
-
-    // ------------------------------------------------------------------
-    // ĐỌC
-    // ------------------------------------------------------------------
 
     /**
      * Đọc file và trả về ['cauHoi' => danh sách câu hỏi, 'phienBan' => mã phiên bản].
@@ -46,180 +35,8 @@ final class KhoCauHoi
      */
     public function doc(): array
     {
-        if (!is_file($this->duongDanFile)) {
-            return ['cauHoi' => [], 'phienBan' => 'chua-co-file'];
-        }
-        $noiDung = (string) file_get_contents($this->duongDanFile);
-        $danhSach = [];
-        foreach (self::phanTichNoiDungJs($noiDung) as $muc) {
-            $danhSach[] = self::chuanHoa(is_array($muc) ? $muc : ['cauHoi' => (string) $muc]);
-        }
-        return ['cauHoi' => $danhSach, 'phienBan' => md5($noiDung)];
-    }
-
-    /** Báo lỗi nếu file đã bị thay đổi kể từ lúc mở trang. */
-    public function kiemTraPhienBan(string $phienBanCu): void
-    {
-        if ($phienBanCu !== $this->phienBanHienTai()) {
-            throw new RuntimeException(self::LOI_PHIEN_BAN);
-        }
-    }
-
-    public function phienBanHienTai(): string
-    {
-        return is_file($this->duongDanFile) ? md5((string) file_get_contents($this->duongDanFile)) : 'chua-co-file';
-    }
-
-    /**
-     * Lấy mảng câu hỏi từ nội dung questions.js (hoặc từ một chuỗi JSON).
-     * Chấp nhận cả kiểu viết tay của thầy cô: có chú thích //, dấu phẩy thừa ở cuối,
-     * chuỗi dùng nháy đơn '...', tên thuộc tính không có ngoặc kép.
-     */
-    public static function phanTichNoiDungJs(string $noiDung): array
-    {
-        $noiDung = preg_replace('/^\xEF\xBB\xBF/', '', $noiDung) ?? $noiDung;   // bỏ BOM
-        $sach = self::boChuThich($noiDung);
-
-        if (preg_match('/\bquestions\s*=\s*\[/', $sach, $m, PREG_OFFSET_CAPTURE)) {
-            $batDau = $m[0][1] + strlen($m[0][0]) - 1;           // vị trí dấu [
-        } else {
-            $batDau = strpos($sach, '[');                         // file JSON thuần
-            if ($batDau === false) {
-                throw new RuntimeException('Không tìm thấy danh sách câu hỏi (thiếu "var questions = [ ... ]").');
-            }
-        }
-
-        $json = self::sangJson($sach, $batDau);
-        $mang = json_decode($json, true);
-        if (!is_array($mang)) {
-            throw new RuntimeException('Danh sách câu hỏi bị sai cú pháp: ' . json_last_error_msg()
-                . '. Hãy kiểm tra dấu ngoặc kép, dấu phẩy, dấu ngoặc.');
-        }
-        return array_values($mang);
-    }
-
-    /** Bỏ chú thích // và /* *\/ nhưng giữ nguyên nội dung trong chuỗi. */
-    private static function boChuThich(string $s): string
-    {
-        $ra = '';
-        $n = strlen($s);
-        $nhay = null;
-        for ($i = 0; $i < $n; $i++) {
-            $c = $s[$i];
-            if ($nhay !== null) {
-                $ra .= $c;
-                if ($c === '\\' && $i + 1 < $n) {
-                    $ra .= $s[++$i];
-                } elseif ($c === $nhay) {
-                    $nhay = null;
-                }
-                continue;
-            }
-            if ($c === '"' || $c === "'") {
-                $nhay = $c;
-                $ra .= $c;
-            } elseif ($c === '/' && ($s[$i + 1] ?? '') === '/') {
-                while ($i < $n && $s[$i] !== "\n") {
-                    $i++;
-                }
-                $ra .= "\n";
-            } elseif ($c === '/' && ($s[$i + 1] ?? '') === '*') {
-                $ket = strpos($s, '*/', $i + 2);
-                $i = $ket === false ? $n : $ket + 1;
-                $ra .= ' ';
-            } else {
-                $ra .= $c;
-            }
-        }
-        return $ra;
-    }
-
-    /** Chép từ dấu [ tới dấu ] tương ứng, đồng thời sửa cú pháp JS cho thành JSON hợp lệ. */
-    private static function sangJson(string $s, int $i): string
-    {
-        $ra = '';
-        $n = strlen($s);
-        $sau = 0;
-        while ($i < $n) {
-            $c = $s[$i];
-            if ($c === '"') {                                    // chuỗi nháy kép
-                $chuoi = '"';
-                for ($j = $i + 1; $j < $n; $j++) {
-                    $k = $s[$j];
-                    if ($k === '\\') {
-                        $tiep = $s[$j + 1] ?? '';
-                        $chuoi .= $tiep === "'" ? "'" : '\\' . $tiep;
-                        $j++;
-                    } elseif ($k === '"') {
-                        break;
-                    } elseif ($k === "\n") {
-                        $chuoi .= '\n';
-                    } elseif ($k === "\r") {
-                        // bỏ
-                    } elseif ($k === "\t") {
-                        $chuoi .= '\t';
-                    } else {
-                        $chuoi .= $k;
-                    }
-                }
-                $ra .= $chuoi . '"';
-                $i = $j + 1;
-                continue;
-            }
-            if ($c === "'") {                                    // chuỗi nháy đơn → nháy kép
-                $tho = '';
-                for ($j = $i + 1; $j < $n; $j++) {
-                    $k = $s[$j];
-                    if ($k === '\\') {
-                        $tiep = $s[$j + 1] ?? '';
-                        $tho .= $tiep === 'n' ? "\n" : ($tiep === 't' ? "\t" : $tiep);
-                        $j++;
-                    } elseif ($k === "'") {
-                        break;
-                    } else {
-                        $tho .= $k;
-                    }
-                }
-                $ra .= json_encode($tho, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                $i = $j + 1;
-                continue;
-            }
-            if ($c === '[' || $c === '{') {
-                $sau++;
-                $ra .= $c;
-                $i++;
-                continue;
-            }
-            if ($c === ']' || $c === '}') {
-                $ra = rtrim($ra);
-                if (substr($ra, -1) === ',') {                   // dấu phẩy thừa
-                    $ra = substr($ra, 0, -1);
-                }
-                $ra .= $c;
-                $i++;
-                if (--$sau === 0) {
-                    return $ra;
-                }
-                continue;
-            }
-            if (ctype_alpha($c) || $c === '_' || $c === '$') {   // tên thuộc tính không có ngoặc kép
-                $j = $i;
-                while ($j < $n && (ctype_alnum($s[$j]) || $s[$j] === '_' || $s[$j] === '$')) {
-                    $j++;
-                }
-                $tu = substr($s, $i, $j - $i);
-                $k = $j;
-                while ($k < $n && ctype_space($s[$k])) {
-                    $k++;
-                }
-                $ra .= ($k < $n && $s[$k] === ':') ? '"' . $tu . '"' : $tu;
-                $i = $j;
-                continue;
-            }
-            $ra .= $c;
-            $i++;
-        }
-        throw new RuntimeException('Danh sách câu hỏi thiếu dấu "]" ở cuối.');
+        $kq = $this->docDanhSach();
+        return ['cauHoi' => $kq['ds'], 'phienBan' => $kq['phienBan']];
     }
 
     // ------------------------------------------------------------------
@@ -338,84 +155,8 @@ final class KhoCauHoi
     }
 
     // ------------------------------------------------------------------
-    // GHI
+    // GHI FILE
     // ------------------------------------------------------------------
-
-    /**
-     * Ghi danh sách câu hỏi vào questions.js.
-     * - $phienBanCu: mã phiên bản lúc mở trang. Nếu file đã bị đổi (người khác vừa lưu,
-     *   hoặc thầy cô sửa tay), từ chối ghi để không làm mất thay đổi đó.
-     * - Luôn sao lưu bản cũ trước khi ghi.
-     */
-    public function ghi(array $danhSach, string $phienBanCu, string $lyDo): void
-    {
-        $this->damBaoThuMucSaoLuu();
-        $khoa = $this->giuKhoaGhi();
-        try {
-            if ($phienBanCu !== $this->phienBanHienTai()) {
-                throw new RuntimeException(self::LOI_PHIEN_BAN);
-            }
-            $this->saoLuu($lyDo);
-            $noiDung = $this->taoNoiDungFile($danhSach);
-            $tam = $this->duongDanFile . '.tmp';
-            if (file_put_contents($tam, $noiDung) === false || !rename($tam, $this->duongDanFile)) {
-                @unlink($tam);
-                throw new RuntimeException('Không ghi được file questions.js. Kiểm tra quyền ghi của thư mục long-quay.');
-            }
-            $this->donBanSaoLuuCu();
-        } finally {
-            flock($khoa, LOCK_UN);
-            fclose($khoa);
-        }
-    }
-
-    /**
-     * Giành quyền ghi (khóa) để hai lần lưu cùng lúc không ghi đè lên nhau.
-     * - Thử lại trong tối đa 5 giây (đề phòng lần lưu khác hoặc phần mềm diệt virus
-     *   đang giữ file trong chốc lát).
-     * - Không mở được file khóa trong thư mục sao lưu thì dùng file khóa dự phòng
-     *   trong thư mục tạm của hệ thống.
-     * - Vẫn không được thì báo rõ lý do thật (và ghi vào log của PHP).
-     *
-     * @return resource
-     */
-    private function giuKhoaGhi()
-    {
-        $cacFileKhoa = [
-            $this->thuMucSaoLuu . '/.khoa',
-            rtrim(sys_get_temp_dir(), '/\\') . '/long-quay-' . md5((string) (realpath($this->duongDanFile) ?: $this->duongDanFile)) . '.khoa',
-        ];
-        $cacLyDo = [];
-        foreach ($cacFileKhoa as $duongDan) {
-            $tep = @fopen($duongDan, 'c');
-            if ($tep === false) {
-                $cacLyDo[] = 'không mở được "' . $duongDan . '" (' . (error_get_last()['message'] ?? 'không rõ lý do') . ')';
-                continue;
-            }
-            $hetHan = microtime(true) + 5;
-            do {
-                $dangBiGiu = 0;
-                if (@flock($tep, LOCK_EX | LOCK_NB, $dangBiGiu)) {
-                    return $tep;
-                }
-                if (!$dangBiGiu) {
-                    // Lỗi thật của hệ thống (không phải do đang bị giữ) → thử chỗ khác
-                    $cacLyDo[] = 'không khóa được "' . $duongDan . '" (' . (error_get_last()['message'] ?? 'không rõ lý do') . ')';
-                    break;
-                }
-                usleep(100000);
-            } while (microtime(true) < $hetHan);
-            fclose($tep);
-            if (!empty($dangBiGiu)) {
-                // Có một lần lưu khác đang giữ khóa: KHÔNG chuyển sang file khóa khác,
-                // vì như vậy hai lần lưu sẽ cùng ghi và làm hỏng dữ liệu.
-                throw new RuntimeException('Đang có một lần lưu khác chưa xong (đã chờ 5 giây). Hãy đợi vài giây rồi bấm lưu lại.');
-            }
-        }
-        error_log('[Quản lý câu hỏi] Không khóa được file để ghi: ' . implode('; ', $cacLyDo));
-        throw new RuntimeException('Không khóa được file để ghi: ' . implode('; ', $cacLyDo)
-            . '. Hãy kiểm tra quyền ghi của thư mục dashboard/backups, hoặc phần mềm diệt virus đang chặn.');
-    }
 
     /** Sắp xếp: tự luận trước, trắc nghiệm sau; trong mỗi phần nhóm theo môn. Giữ thứ tự gốc trong cùng nhóm. */
     public static function sapXep(array $danhSach): array
@@ -516,76 +257,4 @@ final class KhoCauHoi
 
 
 TXT;
-
-    // ------------------------------------------------------------------
-    // SAO LƯU
-    // ------------------------------------------------------------------
-
-    private function damBaoThuMucSaoLuu(): void
-    {
-        if (!is_dir($this->thuMucSaoLuu) && !mkdir($this->thuMucSaoLuu, 0775, true) && !is_dir($this->thuMucSaoLuu)) {
-            throw new RuntimeException('Không tạo được thư mục sao lưu.');
-        }
-    }
-
-    private function saoLuu(string $lyDo): void
-    {
-        if (!is_file($this->duongDanFile)) {
-            return;
-        }
-        $lyDo = preg_replace('/[^a-z0-9-]+/', '-', strtolower(ChuViet::boDau($lyDo))) ?: 'thay-doi';
-        $bayGio = \DateTime::createFromFormat('U.u', sprintf('%.6F', microtime(true)))->setTimezone(new \DateTimeZone(date_default_timezone_get()));
-        $ten = sprintf('questions_%s_%s.js', $bayGio->format('Ymd-His-u'), trim($lyDo, '-'));
-        if (!copy($this->duongDanFile, $this->thuMucSaoLuu . '/' . $ten)) {
-            throw new RuntimeException('Không sao lưu được bản cũ, nên chưa ghi thay đổi.');
-        }
-    }
-
-    private function donBanSaoLuuCu(): void
-    {
-        $cacBan = $this->danhSachSaoLuu();
-        foreach (array_slice($cacBan, $this->soBanSaoLuuGiuLai) as $ban) {
-            @unlink($this->thuMucSaoLuu . '/' . $ban['ten']);
-        }
-    }
-
-    /** Các bản sao lưu, mới nhất trước. */
-    public function danhSachSaoLuu(): array
-    {
-        $ds = [];
-        foreach (glob($this->thuMucSaoLuu . '/questions_*.js') ?: [] as $duongDan) {
-            $ten = basename($duongDan);
-            if (!preg_match('/^questions_(\d{8}-\d{6})-\d{6}_([a-z0-9-]*)\.js$/', $ten, $m)) {
-                continue;
-            }
-            $ds[] = [
-                'ten' => $ten,
-                'thoiGian' => \DateTime::createFromFormat('Ymd-His', $m[1]),
-                'lyDo' => str_replace('-', ' ', $m[2]),
-                'kichThuoc' => filesize($duongDan),
-            ];
-        }
-        usort($ds, static fn($a, $b) => strcmp($b['ten'], $a['ten']));
-        return $ds;
-    }
-
-    public function duongDanSaoLuu(string $ten): string
-    {
-        if (!preg_match('/^questions_\d{8}-\d{6}-\d{6}_[a-z0-9-]*\.js$/', $ten) || !is_file($this->thuMucSaoLuu . '/' . $ten)) {
-            throw new RuntimeException('Không tìm thấy bản sao lưu này.');
-        }
-        return $this->thuMucSaoLuu . '/' . $ten;
-    }
-
-    /** Khôi phục một bản sao lưu (bản hiện tại cũng được sao lưu trước). */
-    public function khoiPhuc(string $ten, string $phienBanCu): int
-    {
-        $noiDung = (string) file_get_contents($this->duongDanSaoLuu($ten));
-        $danhSach = array_map(
-            static fn($m) => self::chuanHoa(is_array($m) ? $m : ['cauHoi' => (string) $m]),
-            self::phanTichNoiDungJs($noiDung)
-        );
-        $this->ghi($danhSach, $phienBanCu, 'truoc-khi-khoi-phuc');
-        return count($danhSach);
-    }
 }

@@ -266,9 +266,16 @@
       else window.scrollTo(0, daLuu.y);
     };
     datViTri();
-    // Làm lại một lần khi trang đã tải xong hẳn: lúc đó bố cục phía trên có thể vừa đổi chiều cao
-    if (document.readyState === 'complete') traLaiCuonMacDinh();
-    else window.addEventListener('load', () => { datViTri(); traLaiCuonMacDinh(); }, { once: true });
+    // Làm lại sau khi trang tải xong hẳn (bố cục phía trên có thể vừa đổi chiều cao).
+    // Chrome tự khôi phục vị trí ngay SAU sự kiện load nếu đang ở chế độ "auto",
+    // nên chỉ trả lại chế độ "auto" sau khi mọi việc đó đã xong.
+    const sauKhiTaiXong = () => {
+      datViTri();
+      requestAnimationFrame(datViTri);
+      setTimeout(traLaiCuonMacDinh, 1000);
+    };
+    if (document.readyState === 'complete') sauKhiTaiXong();
+    else window.addEventListener('load', sauKhiTaiXong, { once: true });
     // Thông báo nằm ở đầu trang, mà trang đang cuộn xuống dưới → hiện thêm ở góc màn hình
     if (daLuu.y > 200) {
       $$('.noi-dung > .thong-bao').forEach((tb) => {
