@@ -61,6 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'khoi_phuc':
                 xuLyKhoiPhuc($kho);
                 break;
+            case 'luu_cai_dat':
+                xuLyLuuCaiDat($khoCaiDat);
+                break;
             case 'dang_xuat':
                 unset($_SESSION['da_dang_nhap']);
                 break;
@@ -191,6 +194,7 @@ $thongBaoHienThi = layThongBao();
 $formCu = $_SESSION['form_cu'] ?? null;
 unset($_SESSION['form_cu']);
 $cacBanSaoLuu = $kho->danhSachSaoLuu();
+$caiDat = $khoCaiDat->doc();
 $csrf = maCsrf();
 
 require __DIR__ . '/giao-dien/trang-chinh.php';

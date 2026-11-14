@@ -76,8 +76,26 @@ const CONFIG = {
   },
 
   // --- Pháo hoa ---
-  soPhaoHoa: 8                // số quả pháo hoa mỗi lần trúng
+  soPhaoHoa: 8,               // số quả pháo hoa mỗi lần trúng
+
+  // --- Thời gian trả lời câu hỏi ---
+  // Số giây mặc định. Thầy cô chỉnh ở trang quản lý (dashboard), giá trị đó được
+  // lưu trong file settings.js và sẽ dùng thay cho số này. 0 = không đếm giờ.
+  thoiGianTraLoi: 30,
+  soGiayCanhBao: 5            // mấy giây cuối thì đồng hồ đỏ lên và kêu tích tắc
 };
+
+// Cài đặt thầy cô chỉnh ở trang quản lý (file settings.js). Không có file thì dùng CONFIG.
+const CAI_DAT = (typeof settings !== 'undefined' && settings && typeof settings === 'object') ? settings : {};
+
+// Số giây được trả lời mỗi câu (0 = không đếm giờ)
+function thoiGianTraLoi() {
+  const n = Number(CAI_DAT.thoiGianTraLoi);
+  if (CAI_DAT.thoiGianTraLoi !== undefined && CAI_DAT.thoiGianTraLoi !== '' && Number.isFinite(n) && n >= 0) {
+    return Math.min(3600, Math.round(n));
+  }
+  return CONFIG.thoiGianTraLoi;
+}
 
 
 /* =============================================================
@@ -105,6 +123,9 @@ const cacLuaChon = $('cacLuaChon');
 const chonKieuCauHoi = $('chonKieuCauHoi');
 const noiDungCauHoi = $('noiDungCauHoi');
 const dapAn = $('dapAn');
+const dongHoEl = $('dongHo');
+const dongHoSo = $('dongHoSo');
+const dongHoThanh = $('dongHoThanh');
 const nutDapAn = $('nutDapAn');
 const nutXong = $('nutXong');
 const thongBaoHet = $('thongBaoHet');
@@ -236,6 +257,7 @@ let caoThe = 0;             // chiều cao thẻ kết quả (để chừa chỗ
 let kieuCauHoi = 'tatCa';   // 'tatCa' | 'tuLuan' | 'tracNghiem' (chọn ở bảng lịch sử)
 let cauDangHoi = null;      // câu hỏi đang hiện trên thẻ
 let daTraLoi = false;       // câu trắc nghiệm đã được trả lời (hoặc đã xem đáp án) chưa
+let dongHo = null;          // đồng hồ đếm ngược đang chạy: { con: số giây còn lại, tong, giayTruoc }
 let thoiGian = 0;           // đồng hồ chung của chương trình
 
 const manHinh = { rong: 0, cao: 0, dpr: 1 };
@@ -724,6 +746,7 @@ function chuanBiThe(hsIndex, cau) {
   dapAn.classList.remove('hien-dap-an', 'tra-loi-dung', 'tra-loi-sai', 'an');
   nutDapAn.disabled = false;
   nutDapAn.textContent = '👀 Xem đáp án';
+  datLaiDongHo(cau);
 
   if (!cau) {
     khungCauHoi.classList.add('an');
@@ -760,8 +783,10 @@ function chuanBiThe(hsIndex, cau) {
     cacLuaChon.classList.add('an');
     nhanCauHoi.textContent = cau.mon ? '❓ Câu hỏi ' + cau.mon + ' dành cho bạn' : '❓ Câu hỏi dành cho bạn';
     noiDungCauHoi.textContent = cau.cauHoi;
-    dapAn.textContent = cau.dapAn ? '💡 Đáp án: ' + cau.dapAn : '';
-    dapAn.classList.toggle('an', !cau.dapAn);
+    // Có đếm giờ thì luôn giữ chỗ cho dòng đáp án (để hiện "Hết giờ!" mà thẻ không nhảy)
+    const coDemGio = thoiGianTraLoi() > 0;
+    dapAn.textContent = cau.dapAn ? '💡 Đáp án: ' + cau.dapAn : (coDemGio ? '⏰ Hết giờ!' : '');
+    dapAn.classList.toggle('an', !cau.dapAn && !coDemGio);
     nutDapAn.classList.toggle('an', !cau.dapAn);
   }
   doCaoThe();
@@ -774,6 +799,7 @@ function chonDapAn(i) {
   if (!bongTrung || bongTrung.giaiDoan !== 'xong') return;   // chỉ khi thẻ đang hiện
   if (i < 0 || i >= cau.luaChon.length) return;
   daTraLoi = true;
+  dungDongHo();
   const dung = i === cau.dapAnDung;
   danhDauLuaChon(i);
   dapAn.classList.add('hien-dap-an', dung ? 'tra-loi-dung' : 'tra-loi-sai');
@@ -853,12 +879,85 @@ function hienKetQua() {
   phatMp3('chucMung', false);
   cheDo = 'nghi';
   capNhatNut();
+  batDauDongHo();
+}
+
+/* ---------- Đồng hồ đếm ngược thời gian trả lời ---------- */
+
+// Chuẩn bị đồng hồ trên thẻ (chưa chạy): hiện đủ số giây, thanh đầy
+function datLaiDongHo(cau) {
+  dongHo = null;
+  const tong = thoiGianTraLoi();
+  dongHoEl.classList.remove('gap', 'het-gio', 'da-dung');
+  dongHoEl.classList.toggle('an', !cau || tong <= 0);
+  dongHoSo.textContent = tong;
+  dongHoThanh.style.transform = 'scaleX(1)';
+}
+
+// Bắt đầu đếm khi thẻ kết quả đã hiện hẳn
+function batDauDongHo() {
+  const tong = thoiGianTraLoi();
+  if (!cauDangHoi || daTraLoi || tong <= 0) return;
+  dongHo = { con: tong, tong: tong, giayTruoc: tong };
+}
+
+// Dừng đồng hồ (đã trả lời, đã xem đáp án). Giữ nguyên số giây đang hiện.
+function dungDongHo() {
+  if (!dongHo) return;
+  dongHo = null;
+  dongHoEl.classList.remove('gap');
+  dongHoEl.classList.add('da-dung');
+}
+
+function capNhatDongHo(dt) {
+  if (!dongHo) return;
+  // Thẻ đã đóng / đã bay vào bảng / đã trả lời → thôi đếm
+  if (!cauDangHoi || daTraLoi || !bongTrung || bongTrung.giaiDoan !== 'xong') { dongHo = null; return; }
+  dongHo.con = Math.max(0, dongHo.con - dt);
+  const giay = Math.ceil(dongHo.con);
+  dongHoSo.textContent = giay;
+  dongHoThanh.style.transform = 'scaleX(' + (dongHo.con / dongHo.tong).toFixed(4) + ')';
+  const gap = dongHo.con <= CONFIG.soGiayCanhBao;
+  dongHoEl.classList.toggle('gap', gap);
+  if (giay < dongHo.giayTruoc) {
+    dongHo.giayTruoc = giay;
+    if (gap && giay > 0) tiengCach(0.35, 1800);       // tích tắc mấy giây cuối
+  }
+  if (dongHo.con <= 0) hetGio();
+}
+
+// Hết giờ mà chưa trả lời → tính là SAI và hiện đáp án đúng
+function hetGio() {
+  const cau = cauDangHoi;
+  dongHo = null;
+  if (!cau || daTraLoi) return;
+  daTraLoi = true;
+  dongHoEl.classList.remove('gap');
+  dongHoEl.classList.add('het-gio');
+  dongHoSo.textContent = '0';
+  if (cau.luaChon) {
+    danhDauLuaChon(-1);
+    dapAn.textContent = '⏰ Hết giờ! Đáp án đúng là ' + CHU_CAI[cau.dapAnDung] + ': ' + cau.luaChon[cau.dapAnDung];
+  } else {
+    dapAn.classList.remove('an');
+    dapAn.textContent = '⏰ Hết giờ!' + (cau.dapAn ? ' Đáp án: ' + cau.dapAn : '');
+    nutDapAn.textContent = '👀 Xem đáp án';
+  }
+  dapAn.classList.add('hien-dap-an', 'tra-loi-sai');
+  nutDapAn.disabled = true;
+  tiengSai();
+  cau.kq = 'sai';
+  luuLichSu();
+  doCaoThe();
+  datViTriTheKetQua();
 }
 
 // Bấm "Xem đáp án"
 //  - Câu tự luận: hiện / ẩn đáp án
 //  - Câu trắc nghiệm: tô xanh phương án đúng (không tính đúng hay sai cho bạn)
 function batTatDapAn() {
+  if (daTraLoi && cauDangHoi && !cauDangHoi.luaChon) return;   // tự luận đã hết giờ
+  dungDongHo();                             // thầy cô đã xem đáp án → không tính giờ nữa
   if (cauDangHoi && cauDangHoi.luaChon) {
     if (daTraLoi) return;
     daTraLoi = true;
@@ -1573,7 +1672,7 @@ function veLichSu(coHieuUng) {
       cau.className = 'cau-hoi-nho';
       const laTracNghiem = !!(luotNay.cau.luaChon || luotNay.cau.tracNghiem);
       cau.textContent = (laTracNghiem ? '📝 ' : '❓ ') + (luotNay.cau.mon ? luotNay.cau.mon + ': ' : '') + luotNay.cau.cauHoi;
-      // Câu trắc nghiệm đã trả lời: ghi thêm "Đúng" hoặc "Sai"
+      // Đã có kết quả (trả lời trắc nghiệm, hoặc hết giờ): ghi thêm "Đúng" hoặc "Sai"
       if (luotNay.cau.kq) {
         const nhan = document.createElement('span');
         nhan.className = 'ket-qua-tl ' + luotNay.cau.kq;
@@ -1934,6 +2033,7 @@ function capNhat(dt) {
   for (let i = 0; i < soBuoc; i++) buocVatLy(h);
   phatTiengVaCham();
   capNhatBongTrung(dt);
+  capNhatDongHo(dt);
   capNhatBongBay(dt);
   capNhatPhaoHoa(dt);
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 // XỬ LÝ THAO TÁC: thêm / sửa / xóa / nhập file / khôi phục / xuất file
 // =============================================================
 
+use Dashboard\CaiDat;
 use Dashboard\KhoCauHoi;
 use Dashboard\NhapXuat;
 
@@ -268,6 +269,26 @@ function xuLyNhap(KhoCauHoi $kho, array $cauHinh): void
         . ($loi ? ' Có ' . count($loi) . ' dòng bị lỗi chưa nhập được.' : ''),
         $chiTiet
     );
+}
+
+/** Lưu thời gian trả lời mỗi câu hỏi (ghi vào long-quay/settings.js). */
+function xuLyLuuCaiDat(CaiDat $khoCaiDat): void
+{
+    $chu = trim((string) ($_POST['thoi_gian_tra_loi'] ?? ''));
+    if (!preg_match('/^\d{1,4}$/', $chu)) {
+        thongBao('loi', 'Thời gian trả lời phải là một số nguyên (số giây).');
+        return;
+    }
+    $giay = (int) $chu;
+    $loi = CaiDat::kiemTraThoiGian($giay);
+    if ($loi !== '') {
+        thongBao('loi', $loi);
+        return;
+    }
+    $khoCaiDat->ghi(['thoiGianTraLoi' => $giay]);
+    thongBao('ok', $giay === 0
+        ? 'Đã tắt đồng hồ đếm ngược: học sinh trả lời không giới hạn thời gian.'
+        : 'Đã đặt thời gian trả lời là ' . $giay . ' giây. Hết giờ mà chưa trả lời sẽ tính là sai. (Trang quay số đang mở cần tải lại – F5 – để nhận cài đặt mới.)');
 }
 
 function xuLyKhoiPhuc(KhoCauHoi $kho): void

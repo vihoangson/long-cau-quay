@@ -451,6 +451,17 @@
   }
   if (nutChonNhieu.length) capNhatChon();
 
+  // ---------- Thời gian trả lời: nút chọn nhanh 15s, 30s… ----------
+
+  const oThoiGian = $('#oThoiGian');
+  $$('.chon-nhanh [data-giay]').forEach((nut) => {
+    nut.addEventListener('click', () => {
+      oThoiGian.value = nut.dataset.giay;
+      $$('.chon-nhanh .nut').forEach((n) => n.classList.toggle('dang-chon', n === nut));
+      oThoiGian.focus();
+    });
+  });
+
   // ---------- Đóng thông báo; tự gửi bộ lọc khi đổi lựa chọn ----------
 
   $$('.dong-thong-bao').forEach((nut) => nut.addEventListener('click', () => nut.parentElement.remove()));

@@ -5,6 +5,7 @@ declare(strict_types=1);
 // KHỞI ĐỘNG: nạp thư viện, cấu hình, phiên làm việc, hàm dùng chung
 // =============================================================
 
+use Dashboard\CaiDat;
 use Dashboard\KhoCauHoi;
 use Dashboard\KhoHocSinh;
 
@@ -61,6 +62,7 @@ $khoHocSinh = new KhoHocSinh(
     $cauHinh['thu_muc_sao_luu'],
     (int) $cauHinh['so_ban_sao_luu_giu_lai']
 );
+$khoCaiDat = new CaiDat($cauHinh['file_cai_dat'] ?? __DIR__ . '/../long-quay/settings.js');
 
 // ------------------------------------------------------------------
 // HÀM DÙNG CHUNG

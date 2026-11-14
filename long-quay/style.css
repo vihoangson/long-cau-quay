@@ -292,6 +292,38 @@ body::before {
 .dap-an.tra-loi-dung { color: #128a3a; }
 .dap-an.tra-loi-sai  { color: #d62839; }
 
+/* ---------- Đồng hồ đếm ngược thời gian trả lời ---------- */
+.dong-ho {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 560px;
+  margin: 4px auto 6px;
+  font-size: calc(clamp(18px, min(2.2vw, 3.2vh), 30px) * var(--co-chu-cau-hoi));
+  font-weight: 900;
+  color: var(--tim);
+}
+.dong-ho-chu { white-space: nowrap; min-width: 3.6em; text-align: right; font-variant-numeric: tabular-nums; }
+.dong-ho-ray {
+  flex: 1;
+  height: 0.55em;
+  border-radius: 999px;
+  background: #e2d8ff;
+  overflow: hidden;
+}
+.dong-ho-thanh {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2ed573, #ffd23f);
+  transform-origin: left center;
+}
+.dong-ho.gap { color: #d62839; animation: dongHoGap 0.5s ease-in-out infinite alternate; }
+.dong-ho.gap .dong-ho-thanh { background: linear-gradient(90deg, #ff4757, #ff9f1c); }
+.dong-ho.het-gio { color: #d62839; }
+.dong-ho.da-dung { opacity: 0.55; }
+@keyframes dongHoGap { from { transform: scale(1); } to { transform: scale(1.06); } }
+
 /* ---------- 4 phương án trắc nghiệm ---------- */
 .cac-lua-chon {
   display: grid;

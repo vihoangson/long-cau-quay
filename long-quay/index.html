@@ -49,6 +49,11 @@
     <!-- Câu hỏi dành cho bạn trúng (lấy từ questions.js) -->
     <div class="khung-cau-hoi" id="khungCauHoi">
       <div class="nhan-cau-hoi" id="nhanCauHoi">❓ Câu hỏi dành cho bạn</div>
+      <!-- Đồng hồ đếm ngược thời gian trả lời (số giây chỉnh ở trang quản lý → settings.js) -->
+      <div class="dong-ho an" id="dongHo" role="timer" aria-live="off">
+        <span class="dong-ho-chu">⏱ <b id="dongHoSo">30</b>s</span>
+        <span class="dong-ho-ray"><span class="dong-ho-thanh" id="dongHoThanh"></span></span>
+      </div>
       <div class="noi-dung-cau-hoi" id="noiDungCauHoi">Nội dung câu hỏi</div>
       <!-- 4 phương án A, B, C, D (chỉ có ở câu trắc nghiệm) -->
       <div class="cac-lua-chon an" id="cacLuaChon"></div>
@@ -93,6 +98,7 @@
   <!-- Nạp danh sách học sinh, danh sách câu hỏi, rồi mới nạp chương trình -->
   <script src="students.js" charset="UTF-8"></script>
   <script src="questions.js" charset="UTF-8"></script>
+  <script src="settings.js" charset="UTF-8"></script>
   <script src="app.js" charset="UTF-8"></script>
 </body>
 </html>

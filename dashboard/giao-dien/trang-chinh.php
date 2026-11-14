@@ -9,6 +9,7 @@
  * @var array $boLoc
  * @var array $danhSachMon
  * @var array $cacBanSaoLuu
+ * @var array $caiDat
  * @var array $thongBaoHienThi
  * @var array|null $formCu
  * @var string|null $loiDocFile
@@ -16,6 +17,7 @@
  * @var string $csrf
  */
 
+use Dashboard\CaiDat;
 use Dashboard\KhoCauHoi;
 
 $tenLoaiThongBao = ['ok' => 'thanh-cong', 'loi' => 'that-bai', 'canh-bao' => 'canh-bao'];
@@ -114,6 +116,31 @@ $oAn = static function (?string $hanhDong) use ($csrf, $phienBan, $boLoc): strin
                 </div>
             <?php endif; ?>
         </div>
+    </section>
+
+    <!-- ===================== THỜI GIAN TRẢ LỜI ===================== -->
+    <section class="khung khung-cai-dat" id="thoi-gian">
+        <form method="post" class="form-cai-dat">
+            <?= $oAn('luu_cai_dat') ?>
+            <label for="oThoiGian"><b>⏱ Thời gian trả lời mỗi câu</b></label>
+            <span class="o-giay">
+                <input type="number" id="oThoiGian" name="thoi_gian_tra_loi" value="<?= (int) $caiDat['thoiGianTraLoi'] ?>"
+                       min="0" max="<?= CaiDat::THOI_GIAN_TOI_DA ?>" step="1" required inputmode="numeric">
+                <span>giây</span>
+            </span>
+            <span class="chon-nhanh" aria-label="Chọn nhanh">
+                <?php foreach ([15, 30, 45, 60, 90] as $g): ?>
+                    <button type="button" class="nut nut-nho nut-mo <?= (int) $caiDat['thoiGianTraLoi'] === $g ? 'dang-chon' : '' ?>" data-giay="<?= $g ?>"><?= $g ?>s</button>
+                <?php endforeach; ?>
+            </span>
+            <button class="nut nut-chinh">💾 Lưu</button>
+            <span class="goi-y-cai-dat">
+                <?= (int) $caiDat['thoiGianTraLoi'] === 0
+                    ? 'Đang <b>tắt</b> đếm giờ (trả lời không giới hạn).'
+                    : 'Khi hiện câu hỏi, đồng hồ đếm ngược <b>' . (int) $caiDat['thoiGianTraLoi'] . ' giây</b>; hết giờ mà chưa trả lời thì tính là <b>sai</b>.' ?>
+                Ghi <b>0</b> để không đếm giờ.
+            </span>
+        </form>
     </section>
 
     <!-- ===================== BỘ LỌC ===================== -->

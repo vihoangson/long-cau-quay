@@ -454,6 +454,14 @@ textarea { resize: vertical; }
   .bo-loc select { flex: 1 1 45%; }
 }
 
+/* ---------- Thời gian trả lời ---------- */
+.form-cai-dat { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.o-giay { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.o-giay input { width: 90px; text-align: center; font-weight: 800; }
+.chon-nhanh { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.chon-nhanh .nut.dang-chon { background: var(--tim-nhat); border-color: var(--tim); }
+.goi-y-cai-dat { flex-basis: 100%; color: var(--chu-mo); font-size: 14px; }
+
 /* ---------- Chuyển trang: Câu hỏi / Học sinh ---------- */
 .tab-trang { display: inline-flex; background: rgba(255, 255, 255, 0.22); border-radius: 12px; padding: 3px; gap: 2px; }
 .tab-trang a { color: #fff; text-decoration: none; font-weight: 800; padding: 7px 12px; border-radius: 9px; white-space: nowrap; }
