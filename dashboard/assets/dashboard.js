@@ -248,20 +248,27 @@
   (function khoiPhucViTriCuon() {
     let daLuu = null;
     try { daLuu = JSON.parse(sessionStorage.getItem(KHOA_CUON) || 'null'); sessionStorage.removeItem(KHOA_CUON); } catch (loi) { daLuu = null; }
-    // Trả lại cho trình duyệt cách cuộn mặc định (cho những lần thầy cô tự bấm F5)
-    if ('scrollRestoration' in history) history.scrollRestoration = 'auto';
-    if (!daLuu || Date.now() - daLuu.luc > 15000) return;
-    let daCuon = false;
-    if (daLuu.moc && daLuu.moc.cauHoi) {
-      const dongMoc = $$('.bang tbody tr').find((d) => {
-        try { return JSON.parse(d.dataset.cau).cauHoi === daLuu.moc.cauHoi; } catch (loi) { return false; }
-      });
-      if (dongMoc) {
-        window.scrollTo(0, window.scrollY + dongMoc.getBoundingClientRect().top - daLuu.moc.lech);
-        daCuon = true;
-      }
+    // Trả lại cho trình duyệt cách cuộn mặc định (cho những lần thầy cô tự bấm F5) – làm sau khi trang tải xong
+    const traLaiCuonMacDinh = () => { if ('scrollRestoration' in history) history.scrollRestoration = 'auto'; };
+    if (!daLuu || Date.now() - daLuu.luc > 15000) {
+      traLaiCuonMacDinh();
+      return;
     }
-    if (!daCuon) window.scrollTo(0, daLuu.y);
+
+    const dongMoc = daLuu.moc && daLuu.moc.cauHoi
+      ? $$('.bang tbody tr').find((d) => {
+        try { return JSON.parse(d.dataset.cau).cauHoi === daLuu.moc.cauHoi; } catch (loi) { return false; }
+      })
+      : null;
+    // Đưa "câu mốc" về đúng chỗ cũ trên màn hình (không có câu mốc thì dùng số pixel)
+    const datViTri = () => {
+      if (dongMoc && dongMoc.isConnected) window.scrollTo(0, window.scrollY + dongMoc.getBoundingClientRect().top - daLuu.moc.lech);
+      else window.scrollTo(0, daLuu.y);
+    };
+    datViTri();
+    // Làm lại một lần khi trang đã tải xong hẳn: lúc đó bố cục phía trên có thể vừa đổi chiều cao
+    if (document.readyState === 'complete') traLaiCuonMacDinh();
+    else window.addEventListener('load', () => { datViTri(); traLaiCuonMacDinh(); }, { once: true });
     // Thông báo nằm ở đầu trang, mà trang đang cuộn xuống dưới → hiện thêm ở góc màn hình
     if (daLuu.y > 200) {
       $$('.noi-dung > .thong-bao').forEach((tb) => {
