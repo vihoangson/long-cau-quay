@@ -617,8 +617,19 @@ body::before {
 
   .bong-nho { width: 34px; height: 34px; font-size: 15px; }
 
-  /* Màn hình hẹp: 4 phương án xếp thành 1 cột */
+  /* Màn hình hẹp: 4 phương án xếp thành 1 cột; phương án ngắn thì vẫn 2 cột */
   .cac-lua-chon { grid-template-columns: 1fr; }
+  .cac-lua-chon.hai-cot { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cac-lua-chon.hai-cot .lua-chon { gap: 6px; padding: 6px 8px; }
+  .cac-lua-chon.hai-cot .chu-cai { width: 1.3em; height: 1.3em; }
+
+  /* Hàng nút dưới cùng gọn trong 1 tầng: 2 nút phụ chỉ còn biểu tượng */
+  .chu-nut { display: none; }
+  .nut-phu { font-size: 22px; padding: 0.35em 0.5em; }
+  .nut-quay { font-size: clamp(22px, 6.4vw, 34px); letter-spacing: 1px; }
+
+  /* Đã có bóng, pháo hoa và tiếng chúc mừng nên ẩn dòng "Chúc mừng" để dành chỗ cho chữ */
+  .chuc-mung { display: none; }
   .the-ket-qua { padding: 4px 12px 10px; border-width: 4px; }
   .khung-cau-hoi { padding: 6px 10px 8px; margin-top: 6px; }
 

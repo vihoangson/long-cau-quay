@@ -732,7 +732,7 @@ function chuanBiThe(hsIndex, cau) {
     cacLuaChon.classList.remove('an');
     // Phương án nào cũng ngắn thì xếp 2 cột cho gọn (điện thoại vẫn đủ chỗ)
     const daiNhat = Math.max.apply(null, cau.luaChon.map((x) => x.length));
-    cacLuaChon.classList.toggle('hai-cot', daiNhat <= 14);
+    cacLuaChon.classList.toggle('hai-cot', daiNhat <= 10);
     cau.luaChon.forEach((noiDung, i) => {
       const nut = document.createElement('button');
       nut.type = 'button';
