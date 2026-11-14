@@ -14,9 +14,9 @@ RUN apt-get update \
 
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
-# Cho phép .htaccess hoạt động
-RUN sed -ri 's#(<Directory /var/www/>[^<]*AllowOverride) None#\1 All#' /etc/apache2/apache2.conf \
-    && grep -A4 '<Directory /var/www/>' /etc/apache2/apache2.conf | grep -q 'AllowOverride All'
+# Cho phép .htaccess hoạt động (file cấu hình riêng, nạp sau apache2.conf nên ghi đè được)
+COPY docker/apache-htaccess.conf /etc/apache2/conf-available/long-quay.conf
+RUN a2enconf long-quay
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/long-quay.ini
 COPY docker/khoi-dong.sh /usr/local/bin/khoi-dong.sh
