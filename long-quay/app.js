@@ -236,6 +236,7 @@ let thoiGian = 0;           // đồng hồ chung của chương trình
 
 const manHinh = { rong: 0, cao: 0, dpr: 1 };
 const vung = { trai: 0, tren: 0, rong: 100, cao: 100 };   // khoảng trống để vẽ lồng
+const vungThe = { trai: 0, tren: 0, rong: 100, cao: 100 }; // khoảng trống cho thẻ kết quả và quả bóng lớn
 const cam = { cosNgang: 1, sinNgang: 0, cosXuong: 1, sinXuong: 0, D: 4.6, tiLe: 100, tamX: 0, tamY: 0 };
 
 // Hướng ánh sáng chiếu tới (từ trên, phía trước, bên trái)
@@ -369,6 +370,16 @@ function tinhBoCuc() {
   vung.rong = Math.max(120, phai - vung.trai);
   vung.cao = Math.max(120, day - vung.tren);
 
+  // Chỗ cho thẻ kết quả: màn hình rộng thì giống chỗ vẽ lồng;
+  // điện thoại thì được dùng gần hết màn hình (đè lên bảng lịch sử) để chữ to hơn
+  if (hep) {
+    vungThe.trai = 6; vungThe.rong = W - 12;
+    vungThe.tren = vung.tren; vungThe.cao = Math.max(120, dinhNut - 4 - vung.tren);
+  } else {
+    vungThe.trai = vung.trai; vungThe.rong = vung.rong;
+    vungThe.tren = vung.tren; vungThe.cao = vung.cao;
+  }
+
   // Đặt máy ảnh sao cho cả lồng, bục, máng nằm gọn trong khoảng trống
   cam.tiLe = 1; cam.tamX = 0; cam.tamY = 0;
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -407,9 +418,9 @@ function doCaoThe() {
     theKetQua.style.visibility = 'hidden';
     theKetQua.classList.remove('an');
   }
-  theKetQua.style.maxWidth = Math.min(1100, Math.max(240, vung.rong - 20)) + 'px';
+  theKetQua.style.maxWidth = Math.min(1100, Math.max(240, vungThe.rong - 8)) + 'px';
   // Chỗ cao nhất thẻ được dùng: chừa chỗ cho quả bóng lớn ở trên
-  const choToiDa = vung.cao - 22 - 34 * 2.15;
+  const choToiDa = vungThe.cao - 22 - 30 * 2.15;
   // Thử cỡ chữ to nhất trước. Không vừa thì thu nhỏ Số và Tên trước,
   // vẫn không vừa mới thu nhỏ câu hỏi (để câu hỏi luôn to dễ đọc).
   let coLon = 1, coCauHoi = 1;
@@ -434,15 +445,16 @@ function datCoChuThe(coLon, coCauHoi) {
 
 // Vị trí và kích thước quả bóng trúng khi hiện kết quả (thẻ kết quả nằm ngay dưới)
 function viTriBongLon() {
-  const tren = vung.tren + 6;
-  const day = vung.tren + vung.cao - 6;
+  const V = vungThe;
+  const tren = V.tren + 6;
+  const day = V.tren + V.cao - 6;
   const choThe = caoThe > 0 ? caoThe + 10 : 0;
-  let rad = kep(Math.min(vung.rong, vung.cao) * 0.13, 40, 150);
+  let rad = kep(Math.min(V.rong, V.cao) * 0.13, 40, 150);
   const conCho = day - tren - choThe;            // chỗ còn lại cho quả bóng
   if (rad * 2.15 > conCho) rad = Math.max(30, conCho / 2.15);
-  let y = Math.max(vung.tren + vung.cao * 0.24, tren + rad);
+  let y = Math.max(V.tren + V.cao * 0.24, tren + rad);
   if (y + rad * 1.12 + choThe > day) y = Math.max(tren + rad, day - choThe - rad * 1.12);
-  return { x: vung.trai + vung.rong / 2, y: y, rad: rad };
+  return { x: V.trai + V.rong / 2, y: y, rad: rad };
 }
 
 // Đặt thẻ kết quả ngay dưới quả bóng trúng
@@ -718,6 +730,9 @@ function chuanBiThe(hsIndex, cau) {
     nhanCauHoi.textContent = '📝 Trắc nghiệm' + (cau.mon ? ' ' + cau.mon : '') + ': chọn 1 đáp án đúng';
     noiDungCauHoi.textContent = cau.cauHoi;
     cacLuaChon.classList.remove('an');
+    // Phương án nào cũng ngắn thì xếp 2 cột cho gọn (điện thoại vẫn đủ chỗ)
+    const daiNhat = Math.max.apply(null, cau.luaChon.map((x) => x.length));
+    cacLuaChon.classList.toggle('hai-cot', daiNhat <= 14);
     cau.luaChon.forEach((noiDung, i) => {
       const nut = document.createElement('button');
       nut.type = 'button';
@@ -1840,7 +1855,14 @@ function batTatToanManHinh() {
 
 function capNhatNutToanManHinh() {
   const dang = document.fullscreenElement || document.webkitFullscreenElement;
-  nutToanManHinh.textContent = dang ? '↩️ Thoát toàn màn hình' : '🖥️ Toàn màn hình';
+  const chu = dang ? 'Thoát toàn màn hình' : 'Toàn màn hình';
+  nutToanManHinh.textContent = dang ? '↩️' : '🖥️';
+  const nhan = document.createElement('span');
+  nhan.className = 'chu-nut';
+  nhan.textContent = ' ' + chu;
+  nutToanManHinh.appendChild(nhan);
+  nutToanManHinh.title = chu;
+  nutToanManHinh.setAttribute('aria-label', chu);
   tinhBoCuc();
 }
 

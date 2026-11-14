@@ -619,8 +619,22 @@ body::before {
 
   /* Màn hình hẹp: 4 phương án xếp thành 1 cột */
   .cac-lua-chon { grid-template-columns: 1fr; }
-  .the-ket-qua { padding: 4px 14px 10px; }
-  .khung-cau-hoi { padding: 6px 10px 8px; }
+  .the-ket-qua { padding: 4px 12px 10px; border-width: 4px; }
+  .khung-cau-hoi { padding: 6px 10px 8px; margin-top: 6px; }
+
+  /* Điện thoại: chữ trên thẻ kết quả to hơn (tính theo bề ngang màn hình) */
+  .chuc-mung { font-size: calc(clamp(16px, 4.6vw, 22px) * var(--co-chu-lon)); }
+  .so-trung  { font-size: calc(clamp(46px, 15vw, 80px) * var(--co-chu-lon)); }
+  .ten-trung { font-size: calc(clamp(26px, 8.4vw, 42px) * var(--co-chu-lon)); }
+  .nhan-cau-hoi { font-size: calc(clamp(16px, 4.4vw, 22px) * var(--co-chu-cau-hoi)); }
+  .noi-dung-cau-hoi { font-size: calc(clamp(22px, 6.6vw, 34px) * var(--co-chu-cau-hoi)); }
+  .dap-an { font-size: calc(clamp(19px, 5.4vw, 28px) * var(--co-chu-cau-hoi)); }
+  .lua-chon {
+    font-size: calc(clamp(20px, 6vw, 30px) * var(--co-chu-cau-hoi));
+    min-height: 2em;
+    padding: 6px 10px;
+  }
+  .nut-nho { font-size: 18px; padding: 0.45em 1.1em; }
 
   .thanh-duoi { gap: 10px 12px; padding-bottom: 12px; }
 }
