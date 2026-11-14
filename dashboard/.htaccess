@@ -1,0 +1,10 @@
+# Không liệt kê file trong thư mục
+Options -Indexes
+
+# Chặn mở trực tiếp các file cấu hình / xử lý bên trong
+<FilesMatch "^(config|khoi-dong|xu-ly)\.php$|^composer\.(json|lock)$|\.md$">
+    Require all denied
+</FilesMatch>
+
+# Chặn các thư mục nội bộ: mã nguồn, thư viện, bản sao lưu, mẫu giao diện
+RedirectMatch 404 /dashboard/(src|vendor|backups|giao-dien)(/.*)?$

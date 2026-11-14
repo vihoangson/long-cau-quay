@@ -1,0 +1,24 @@
+{
+    "name": "long-quay/dashboard",
+    "description": "Trang quản lý ngân hàng câu hỏi cho Lồng Quay May Mắn",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-zip": "*",
+        "shuchkin/simplexlsx": "^1.1",
+        "shuchkin/simplexlsxgen": "^1.4"
+    },
+    "config": {
+        "platform": {
+            "php": "8.0.30"
+        },
+        "optimize-autoloader": true
+    },
+    "autoload": {
+        "psr-4": {
+            "Dashboard\\": "src/"
+        }
+    }
+}

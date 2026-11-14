@@ -149,6 +149,8 @@ function docDanhSachCauHoi() {
   const ketQua = [];
   goc.forEach((c) => {
     if (!c) return;
+    // Câu bị thầy cô tạm tắt ("tamTat": true) thì không đưa vào lượt quay
+    if (typeof c === 'object' && (c.tamTat === true || c.disabled === true)) return;
     // Cho phép viết câu hỏi dạng chữ trơn, hoặc dạng { "cauHoi": ..., "dapAn": ... }
     const cauHoi = typeof c === 'string' ? c.trim() : String(c.cauHoi || c.question || '').trim();
     if (!cauHoi) return;
