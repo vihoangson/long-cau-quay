@@ -71,7 +71,7 @@ const CONFIG = {
   // File MP3 đặt trong thư mục am-thanh. Để "" nếu không muốn dùng file đó.
   // Chưa có file thì chương trình tự dùng tiếng có sẵn.
   amThanhMp3: {
-    chucMung: 'am-thanh/chuc-mung.mp3',  // tiếng chúc mừng / hoan hô khi hiện tên
+    chucMung: '',  // tiếng chúc mừng / hoan hô khi hiện tên
     quay: 'am-thanh/quay.mp3'   // tiếng lồng quay: muốn dùng thì ghi 'am-thanh/quay.mp3' (để trống = dùng tiếng lạch cạch có sẵn)
   },
 
