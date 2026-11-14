@@ -1,0 +1,3 @@
+# Image chỉ cần thư mục docker/; mã nguồn được gắn vào lúc chạy (volumes)
+*
+!docker/

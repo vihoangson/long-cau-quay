@@ -1,0 +1,21 @@
+# =============================================================
+# Lồng Quay May Mắn – chạy bằng Docker
+#   docker compose up -d --build
+# rồi mở:
+#   http://localhost:8221/            trang chủ
+#   http://localhost:8221/long-quay/  trang quay số
+#   http://localhost:8221/dashboard/  trang quản lý
+# =============================================================
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: long-cau-quay
+    ports:
+      - "8221:80"
+    volumes:
+      # Gắn thẳng thư mục dự án: sửa câu hỏi / học sinh trên dashboard là
+      # ghi ngay vào long-quay/*.js trên máy thật.
+      - ./:/var/www/html
+    restart: unless-stopped
