@@ -72,7 +72,7 @@ const CONFIG = {
   // Chưa có file thì chương trình tự dùng tiếng có sẵn.
   amThanhMp3: {
     chucMung: 'am-thanh/chuc-mung.mp3',  // tiếng chúc mừng / hoan hô khi hiện tên
-    quay: ''   // tiếng lồng quay: muốn dùng thì ghi 'am-thanh/quay.mp3' (để trống = dùng tiếng lạch cạch có sẵn)
+    quay: 'am-thanh/quay.mp3'   // tiếng lồng quay: muốn dùng thì ghi 'am-thanh/quay.mp3' (để trống = dùng tiếng lạch cạch có sẵn)
   },
 
   // --- Pháo hoa ---
