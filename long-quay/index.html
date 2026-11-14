@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lồng Quay May Mắn</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Canvas vẽ lồng quay, chân đỡ, bóng -->
+  <canvas id="canvasLong"></canvas>
+
+  <!-- Thanh tiêu đề phía trên -->
+  <header class="thanh-tren" id="thanhTren">
+    <h1>🎡 Lồng Quay May Mắn</h1>
+    <div class="dem" id="dem">Còn lại: 0 / 0 bạn</div>
+  </header>
+
+  <!-- Bảng lịch sử các lượt đã quay -->
+  <aside class="bang-lich-su" id="bangLichSu">
+    <h2>📜 Đã quay <span id="soDaQuay">(0)</span></h2>
+    <ol class="danh-sach-lich-su" id="danhSachLichSu"></ol>
+  </aside>
+
+  <!-- Thẻ hiện kết quả trúng thưởng -->
+  <div class="the-ket-qua an" id="theKetQua">
+    <div class="chuc-mung">🎉 Chúc mừng 🎉</div>
+    <div class="so-trung" id="soTrung">Số 1</div>
+    <div class="ten-trung" id="tenTrung">Tên học sinh</div>
+
+    <!-- Câu hỏi dành cho bạn trúng (lấy từ questions.js) -->
+    <div class="khung-cau-hoi" id="khungCauHoi">
+      <div class="nhan-cau-hoi" id="nhanCauHoi">❓ Câu hỏi dành cho bạn</div>
+      <div class="noi-dung-cau-hoi" id="noiDungCauHoi">Nội dung câu hỏi</div>
+      <div class="dap-an" id="dapAn">Đáp án</div>
+    </div>
+
+    <div class="nut-the">
+      <button type="button" class="nut nut-nho nut-dap-an" id="nutDapAn">👀 Xem đáp án</button>
+      <button type="button" class="nut nut-nho nut-xong" id="nutXong">✅ Xong</button>
+    </div>
+  </div>
+
+  <!-- Thông báo khi đã quay hết -->
+  <div class="thong-bao-het an" id="thongBaoHet">🎊 Đã quay hết danh sách! 🎊</div>
+
+  <!-- Thông báo lỗi (ví dụ students.js bị sai) -->
+  <div class="thong-bao-loi an" id="thongBaoLoi"></div>
+
+  <!-- Các nút bấm phía dưới -->
+  <footer class="thanh-duoi" id="thanhDuoi">
+    <button type="button" class="nut nut-phu" id="nutLamLai">🔄 Làm lại từ đầu</button>
+    <button type="button" class="nut nut-quay" id="nutQuay">QUAY!</button>
+    <button type="button" class="nut nut-phu" id="nutToanManHinh">🖥️ Toàn màn hình</button>
+  </footer>
+
+  <!-- Canvas phủ trên cùng: pháo hoa và quả bóng trúng -->
+  <canvas id="canvasHieuUng"></canvas>
+
+  <!-- Hộp hỏi xác nhận trước khi làm lại -->
+  <div class="hop-thoai an" id="hopThoai" role="dialog" aria-modal="true" aria-labelledby="tieuDeHopThoai">
+    <div class="hop-thoai-noi-dung">
+      <h3 id="tieuDeHopThoai">Làm lại từ đầu?</h3>
+      <p>Toàn bộ lịch sử quay sẽ bị xóa và tất cả bóng sẽ trở lại lồng.</p>
+      <div class="hop-thoai-nut">
+        <button type="button" class="nut nut-phu" id="nutHuy">Không, giữ lại</button>
+        <button type="button" class="nut nut-nguy-hiem" id="nutDongY">Có, làm lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nạp danh sách học sinh, danh sách câu hỏi, rồi mới nạp chương trình -->
+  <script src="students.js" charset="UTF-8"></script>
+  <script src="questions.js" charset="UTF-8"></script>
+  <script src="app.js" charset="UTF-8"></script>
+</body>
+</html>

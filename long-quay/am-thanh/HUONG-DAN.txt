@@ -1,0 +1,22 @@
+THƯ MỤC ÂM THANH
+================
+
+1) TIẾNG CHÚC MỪNG (HOAN HÔ)
+   Bỏ file MP3 vào thư mục này và đặt tên đúng là:
+
+       chuc-mung.mp3
+
+   File sẽ phát mỗi khi hiện số và tên bạn trúng. Không cần sửa gì thêm.
+   Chưa có file thì chương trình chỉ kêu tiếng "ting" có sẵn.
+
+2) TIẾNG LỒNG QUAY (không bắt buộc)
+   Mặc định chương trình tự tạo tiếng lạch cạch.
+   Muốn dùng file MP3 riêng:
+     - Bỏ file vào thư mục này, đặt tên:  quay.mp3
+     - Mở app.js bằng Notepad, tìm dòng   quay: ''
+       sửa thành                          quay: 'am-thanh/quay.mp3'
+   File này sẽ phát lặp lại trong lúc quay, to dần khi quay nhanh và nhỏ dần khi chậm lại.
+
+Ghi chú: khi chưa bỏ file chuc-mung.mp3 vào, nếu mở cửa sổ kiểm tra lỗi của
+trình duyệt (phím F12) sẽ thấy một dòng báo "không tìm thấy file". Dòng này
+vô hại, chương trình vẫn chạy bình thường.
