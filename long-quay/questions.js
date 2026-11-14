@@ -35,9 +35,9 @@ var questions = [
   // =============================================================
 
   // ---------- TỰ LUẬN – CÂU HỎI CHUNG (không ghi môn) ----------
-  { "cauHoi": "Em hãy đọc một câu ca dao hoặc tục ngữ mà em thích.", "dapAn": "" },
-  { "cauHoi": "Hãy kể 3 ngày không phải thứ 2, t3, t4, t5, t6, t7, cn", "dapAn": "Ngày hôm qua, ngày hôm nay, ngày mai" },
+  { "cauHoi": "Em hãy đọc một câu ca dao hoặc tục ngữ mà em thích.", "dapAn": "", "tamTat": true },
+  { "cauHoi": "Hãy kể 3 ngày không phải thứ 2, t3, t4, t5, t6, t7, cn", "dapAn": "Ngày hôm qua, ngày hôm nay, ngày mai", "tamTat": true },
 
   // ---------- TỰ LUẬN – TIẾNG VIỆT ----------
-  { "mon": "Tiếng Việt", "cauHoi": "Hôm nay là ngày thứ mấy", "dapAn": "Ngày hôm qua + 1" }
+  { "mon": "Tiếng Việt", "cauHoi": "Hôm nay là ngày thứ mấy", "dapAn": "Ngày hôm qua + 1", "tamTat": true }
 ];

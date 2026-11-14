@@ -34,6 +34,13 @@ if ($canDangNhap && empty($_SESSION['da_dang_nhap'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     kiemTraCsrf();
     $hanhDong = (string) ($_POST['hanh_dong'] ?? '');
+
+    // Bật / tắt gửi bằng fetch (không tải lại trang): trả về JSON rồi dừng
+    if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch' && in_array($hanhDong, ['tat', 'bat'], true)) {
+        traLoiAjaxBatTat($kho, $hanhDong === 'tat');
+        exit;
+    }
+
     try {
         switch ($hanhDong) {
             case 'luu':

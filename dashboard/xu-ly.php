@@ -140,6 +140,51 @@ function xuLyBatTat(KhoCauHoi $kho, bool $tat): void
         : 'Đã bật lại ' . $soDoi . ' câu hỏi. Các câu này sẽ được dùng ở những lượt quay tiếp theo.');
 }
 
+/**
+ * Bật / tắt bằng fetch: làm giống xuLyBatTat nhưng trả về JSON để trang tự cập nhật
+ * từng dòng, không phải tải lại (nên không mất vị trí đang cuộn).
+ *
+ * Trả về: {
+ *   ok, thongBao: [{loai, noi_dung}], phienBan (mã phiên bản MỚI của file),
+ *   trangThai: {viTri: true/false (đang tắt?)}, tong, tamTat,
+ *   canTaiLai: true nếu thứ tự câu trong file vừa bị sắp xếp lại (số # đã đổi)
+ * }
+ */
+function traLoiAjaxBatTat(KhoCauHoi $kho, bool $tat): void
+{
+    header('Content-Type: application/json; charset=UTF-8');
+    header('Cache-Control: no-store');
+    $ketQua = ['ok' => false];
+    try {
+        $truoc = $kho->doc();
+        // Khi lưu, file luôn được sắp xếp lại. Nếu trước đó file chưa theo thứ tự này
+        // (ví dụ vừa sửa tay) thì số thứ tự các câu sẽ đổi → trang phải tải lại.
+        $daDungThuTu = KhoCauHoi::sapXep($truoc['cauHoi']) === $truoc['cauHoi'];
+        xuLyBatTat($kho, $tat);
+        $sau = $kho->doc();
+        $ds = $sau['cauHoi'];
+        $trangThai = [];
+        foreach ((array) ($_POST['vi_tri'] ?? []) as $v) {
+            $i = (int) $v;
+            if (isset($ds[$i])) {
+                $trangThai[$i] = $ds[$i]['tamTat'];
+            }
+        }
+        $ketQua = [
+            'ok' => true,
+            'phienBan' => $sau['phienBan'],
+            'trangThai' => (object) $trangThai,
+            'tong' => count($ds),
+            'tamTat' => count(array_filter($ds, static fn($c) => $c['tamTat'])),
+            'canTaiLai' => !$daDungThuTu && $sau['phienBan'] !== $truoc['phienBan'],
+        ];
+    } catch (RuntimeException $e) {
+        thongBao('loi', $e->getMessage());
+    }
+    $ketQua['thongBao'] = layThongBao();      // lấy ra luôn để không hiện lại ở lần tải trang sau
+    echo json_encode($ketQua, JSON_UNESCAPED_UNICODE);
+}
+
 function xuLyNhap(KhoCauHoi $kho, array $cauHinh): void
 {
     $tep = $_FILES['tep'] ?? null;

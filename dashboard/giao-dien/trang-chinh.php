@@ -81,7 +81,7 @@ $oAn = static function (?string $hanhDong) use ($csrf, $phienBan, $boLoc): strin
     <!-- ===================== THỐNG KÊ ===================== -->
     <section class="the-thong-ke" aria-label="Thống kê">
         <div class="o-so"><span class="so"><?= $thongKe['tong'] ?></span><span class="nhan">Tổng số câu
-            <small><?= $thongKe['tong'] - $thongKe['tamTat'] ?> đang dùng<?php if ($thongKe['tamTat']): ?> · <a href="<?= e(lienKet([], ['tinh_trang' => 'tam_tat'])) ?>"><?= $thongKe['tamTat'] ?> tạm tắt</a><?php endif; ?></small></span></div>
+            <small id="thongKeDangDung" data-lien-ket-tam-tat="<?= e(lienKet([], ['tinh_trang' => 'tam_tat'])) ?>"><?= $thongKe['tong'] - $thongKe['tamTat'] ?> đang dùng<?php if ($thongKe['tamTat']): ?> · <a href="<?= e(lienKet([], ['tinh_trang' => 'tam_tat'])) ?>"><?= $thongKe['tamTat'] ?> tạm tắt</a><?php endif; ?></small></span></div>
         <div class="o-so tu-luan"><span class="so"><?= $thongKe['tuLuan'] ?></span><span class="nhan">✍️ Tự luận</span></div>
         <div class="o-so trac-nghiem"><span class="so"><?= $thongKe['tracNghiem'] ?></span><span class="nhan">📝 Trắc nghiệm</span></div>
         <div class="o-so <?= $thongKe['loi'] || $thongKe['trung'] ? 'can-xem' : '' ?>">
@@ -227,7 +227,7 @@ $oAn = static function (?string $hanhDong) use ($csrf, $phienBan, $boLoc): strin
                             </td>
                             <td class="cot-thao-tac">
                                 <button type="button" class="nut nut-nho nut-sua">✏️ Sửa</button>
-                                <form method="post" class="form-gon">
+                                <form method="post" class="form-gon form-bat-tat">
                                     <?= $oAn($c['tamTat'] ? 'bat' : 'tat') ?>
                                     <input type="hidden" name="vi_tri[]" value="<?= $m['viTri'] ?>">
                                     <?php if ($c['tamTat']): ?>

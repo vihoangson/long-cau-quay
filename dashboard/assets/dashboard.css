@@ -258,6 +258,33 @@ textarea { resize: vertical; }
 .nhan-da-chon b { color: var(--tim); }
 .o-so .nhan small a { color: inherit; font-weight: 700; }
 
+/* Dòng vừa bật/tắt: nháy vàng nhẹ; dòng không còn khớp bộ lọc: mờ dần rồi biến mất */
+.bang tr.vua-doi { animation: nhayVang 1.2s ease-out; }
+@keyframes nhayVang { from { box-shadow: inset 0 0 0 9999px rgba(255, 210, 63, 0.45); } to { box-shadow: inset 0 0 0 9999px rgba(255, 210, 63, 0); } }
+.bang tr.dang-roi { opacity: 0; transition: opacity 0.4s; }
+.nut.dang-gui { cursor: progress; opacity: 0.6; }
+
+/* Thông báo nhỏ ở góc dưới bên phải (dùng khi không tải lại trang) */
+.vung-thong-bao-nhanh {
+  position: fixed; right: 16px; bottom: 16px; z-index: 50;
+  display: grid; gap: 8px; width: min(420px, calc(100vw - 32px));
+}
+.thong-bao-nhanh {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px 10px 16px; border-radius: 12px; border: 1px solid;
+  font-weight: 600; font-size: 14px;
+  box-shadow: 0 10px 30px rgba(36, 18, 79, 0.2);
+  animation: truotVao 0.25s ease-out;
+  transition: opacity 0.4s, transform 0.4s;
+}
+.thong-bao-nhanh span { flex: 1; }
+.thong-bao-nhanh .dong-thong-bao { position: static; }
+.thong-bao-nhanh.thanh-cong { background: var(--xanh-nhat); border-color: #a9e5bf; color: #11512c; }
+.thong-bao-nhanh.that-bai { background: var(--do-nhat); border-color: #f4c2c8; color: #7a0f1c; }
+.thong-bao-nhanh.canh-bao { background: var(--cam-nhat); border-color: #f5d18a; color: #6b4100; }
+.thong-bao-nhanh.dang-an { opacity: 0; transform: translateY(10px); }
+@keyframes truotVao { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
 .o-tam-tat {
   display: flex; gap: 10px; align-items: flex-start;
   padding: 10px 14px; border-radius: 12px; border: 2px dashed var(--vien);

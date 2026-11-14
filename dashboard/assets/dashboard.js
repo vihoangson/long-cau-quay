@@ -177,14 +177,106 @@
     });
   }
 
-  // ---------- Chọn nhiều câu để xóa ----------
+  // ---------- Thông báo nhỏ ở góc màn hình (không làm trang nhảy lên đầu) ----------
+
+  function thongBaoNhanh(loai, noiDung, coNutTaiLai) {
+    let vung = $('#vungThongBaoNhanh');
+    if (!vung) {
+      vung = document.createElement('div');
+      vung.id = 'vungThongBaoNhanh';
+      vung.className = 'vung-thong-bao-nhanh';
+      vung.setAttribute('role', 'status');
+      vung.setAttribute('aria-live', 'polite');
+      document.body.appendChild(vung);
+    }
+    const o = document.createElement('div');
+    o.className = 'thong-bao-nhanh ' + (loai === 'loi' ? 'that-bai' : loai === 'canh-bao' ? 'canh-bao' : 'thanh-cong');
+    const chu = document.createElement('span');
+    chu.textContent = noiDung;
+    o.appendChild(chu);
+    if (coNutTaiLai) {
+      const nut = document.createElement('button');
+      nut.type = 'button';
+      nut.className = 'nut nut-nho nut-mo';
+      nut.textContent = '↻ Tải lại trang';
+      nut.addEventListener('click', () => taiLaiGiuViTri());
+      o.appendChild(nut);
+    }
+    const dong = document.createElement('button');
+    dong.type = 'button';
+    dong.className = 'dong-thong-bao';
+    dong.setAttribute('aria-label', 'Đóng');
+    dong.textContent = '×';
+    dong.addEventListener('click', () => o.remove());
+    o.appendChild(dong);
+    vung.appendChild(o);
+    // Thông báo thành công tự ẩn; thông báo lỗi giữ lại cho thầy cô đọc
+    if (loai !== 'loi' && !coNutTaiLai) setTimeout(() => { o.classList.add('dang-an'); setTimeout(() => o.remove(), 400); }, 3500);
+  }
+
+  // ---------- Giữ vị trí cuộn khi trang phải tải lại (Sửa, Xóa, Nhập file…) ----------
+
+  const KHOA_CUON = 'quanLyCauHoi_viTriCuon';
+
+  // Nhớ cả "câu hỏi đang nằm ở đầu màn hình" (mốc), không chỉ số pixel: sau khi tải lại,
+  // thông báo ở đầu trang hoặc thứ tự câu có thể thay đổi, nhưng câu hỏi đó vẫn còn.
+  function ghiNhoViTriCuon() {
+    let moc = null;
+    const cacDong = $$('.bang tbody tr');
+    for (let i = 0; i < cacDong.length; i++) {
+      const khung = cacDong[i].getBoundingClientRect();
+      if (khung.bottom > 0) {
+        try { moc = { cauHoi: JSON.parse(cacDong[i].dataset.cau).cauHoi, lech: khung.top }; } catch (loi) { moc = null; }
+        break;
+      }
+    }
+    try { sessionStorage.setItem(KHOA_CUON, JSON.stringify({ y: window.scrollY, moc: moc, luc: Date.now() })); } catch (loi) { /* bỏ qua */ }
+  }
+
+  function taiLaiGiuViTri() {
+    ghiNhoViTriCuon();
+    location.reload();
+  }
+
+  // Mọi form gửi đi theo cách thường (không phải fetch) đều nhớ vị trí cuộn trước khi đi
+  document.addEventListener('submit', (e) => {
+    if (!e.defaultPrevented && (e.target.method || '').toLowerCase() === 'post') ghiNhoViTriCuon();
+  });
+
+  (function khoiPhucViTriCuon() {
+    let daLuu = null;
+    try { daLuu = JSON.parse(sessionStorage.getItem(KHOA_CUON) || 'null'); sessionStorage.removeItem(KHOA_CUON); } catch (loi) { daLuu = null; }
+    if (!daLuu || Date.now() - daLuu.luc > 15000) return;
+    let daCuon = false;
+    if (daLuu.moc && daLuu.moc.cauHoi) {
+      const dongMoc = $$('.bang tbody tr').find((d) => {
+        try { return JSON.parse(d.dataset.cau).cauHoi === daLuu.moc.cauHoi; } catch (loi) { return false; }
+      });
+      if (dongMoc) {
+        window.scrollTo(0, window.scrollY + dongMoc.getBoundingClientRect().top - daLuu.moc.lech);
+        daCuon = true;
+      }
+    }
+    if (!daCuon) window.scrollTo(0, daLuu.y);
+    // Thông báo nằm ở đầu trang, mà trang đang cuộn xuống dưới → hiện thêm ở góc màn hình
+    if (daLuu.y > 200) {
+      $$('.noi-dung > .thong-bao').forEach((tb) => {
+        const p = tb.querySelector('p');
+        const loai = tb.classList.contains('that-bai') ? 'loi' : tb.classList.contains('canh-bao') ? 'canh-bao' : 'ok';
+        if (p) thongBaoNhanh(loai, p.textContent.trim());
+      });
+    }
+  })();
+
+  // ---------- Chọn nhiều câu ----------
 
   const chonTatCa = $('#chonTatCa');
-  const oChon = $$('.o-chon');
+  const layOChon = () => $$('.o-chon');          // lấy mới mỗi lần (dòng có thể bị gỡ khỏi bảng)
   const nutChonNhieu = $$('.nut-chon-nhieu');
   const soDaChon = $('.so-da-chon');
 
   function capNhatChon() {
+    const oChon = layOChon();
     const so = oChon.filter((o) => o.checked).length;
     if (soDaChon) soDaChon.textContent = so;
     nutChonNhieu.forEach((n) => { n.disabled = so === 0; });
@@ -195,20 +287,147 @@
     }
   }
 
-  oChon.forEach((o) => o.addEventListener('change', capNhatChon));
+  layOChon().forEach((o) => o.addEventListener('change', capNhatChon));
   if (chonTatCa) {
     chonTatCa.addEventListener('change', () => {
-      oChon.forEach((o) => { o.checked = chonTatCa.checked; });
+      layOChon().forEach((o) => { o.checked = chonTatCa.checked; });
       capNhatChon();
     });
   }
+
+  // ---------- Bật / tắt câu hỏi KHÔNG tải lại trang (gửi ngầm bằng fetch) ----------
+
+  const locTinhTrang = new URLSearchParams(location.search).get('tinh_trang') || '';
+
+  // Sau mỗi lần lưu, file có mã phiên bản mới → cập nhật cho mọi form trên trang
+  function capNhatPhienBan(phienBan) {
+    $$('input[name="phien_ban"]').forEach((o) => { o.value = phienBan; });
+  }
+
+  function capNhatThongKe(tong, tamTat) {
+    const o = $('#thongKeDangDung');
+    if (!o) return;
+    o.textContent = (tong - tamTat) + ' đang dùng';
+    if (tamTat > 0) {
+      o.append(' · ');
+      const a = document.createElement('a');
+      a.href = o.dataset.lienKetTamTat;
+      a.textContent = tamTat + ' tạm tắt';
+      o.appendChild(a);
+    }
+  }
+
+  // Đổi giao diện một dòng sang "đang tắt" hoặc "đang dùng"
+  function capNhatDong(viTri, tat) {
+    const dong = $('tr[data-vi-tri="' + viTri + '"]');
+    if (!dong) return;
+    dong.classList.toggle('tam-tat', tat);
+
+    const cau = JSON.parse(dong.dataset.cau);
+    cau.tamTat = tat;
+    dong.dataset.cau = JSON.stringify(cau);     // để hộp Sửa tích đúng ô "Tạm tắt"
+
+    const cotLoai = $('.cot-loai', dong);
+    const nhan = $('.nhan-tam-tat', cotLoai);
+    if (tat && !nhan) {
+      const moi = document.createElement('span');
+      moi.className = 'nhan-tam-tat';
+      moi.title = 'Không dùng khi quay số';
+      moi.textContent = '⏸ Đang tắt';
+      cotLoai.append(' ', moi);
+    } else if (!tat && nhan) {
+      nhan.remove();
+    }
+
+    const form = $('.form-bat-tat', dong);
+    if (form) {
+      $('input[name="hanh_dong"]', form).value = tat ? 'bat' : 'tat';
+      const nut = $('button', form);
+      nut.className = 'nut nut-nho ' + (tat ? 'nut-bat' : 'nut-tat');
+      nut.textContent = tat ? '▶ Bật' : '⏸ Tắt';
+      nut.title = tat ? 'Bật lại để dùng khi quay' : 'Tạm tắt: giữ lại nhưng không dùng khi quay';
+    }
+
+    // Nháy nhẹ cho thầy cô thấy dòng vừa đổi
+    dong.classList.remove('vua-doi');
+    void dong.offsetWidth;
+    dong.classList.add('vua-doi');
+
+    // Đang lọc "Tạm tắt" / "Đang dùng" mà dòng không còn khớp → gỡ khỏi bảng
+    if ((locTinhTrang === 'tam_tat' && !tat) || (locTinhTrang === 'dang_dung' && tat)) {
+      dong.classList.add('dang-roi');
+      setTimeout(() => { dong.remove(); capNhatChon(); }, 450);
+    }
+  }
+
+  /** Gửi form bật/tắt bằng fetch. hanhDong: 'tat' | 'bat'. Trả về true nếu thành công. */
+  async function guiBatTat(form, hanhDong, cacNutKhoa) {
+    const duLieu = new FormData(form);
+    duLieu.set('hanh_dong', hanhDong);
+    cacNutKhoa.forEach((n) => { n.disabled = true; n.classList.add('dang-gui'); });
+    try {
+      const traLoi = await fetch(form.getAttribute('action') || location.href, {
+        method: 'POST',
+        body: duLieu,
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'fetch', Accept: 'application/json' }
+      });
+      let kq;
+      try {
+        kq = await traLoi.json();
+      } catch (loi) {
+        // Máy chủ không trả JSON (ví dụ phiên làm việc hết hạn)
+        thongBaoNhanh('loi', 'Không lưu được: ' + ((await traLoi.text().catch(() => '')) || ('lỗi máy chủ ' + traLoi.status)).slice(0, 200), true);
+        return false;
+      }
+      (kq.thongBao || []).forEach((tb) => thongBaoNhanh(tb.loai, tb.noi_dung, !kq.ok));
+      if (!kq.ok) return false;
+
+      capNhatPhienBan(kq.phienBan);
+      if (kq.canTaiLai) {
+        // Số thứ tự các câu vừa đổi (file được sắp xếp lại) → tải lại để không thao tác nhầm câu
+        taiLaiGiuViTri();
+        return true;
+      }
+      Object.keys(kq.trangThai || {}).forEach((viTri) => capNhatDong(viTri, !!kq.trangThai[viTri]));
+      capNhatThongKe(kq.tong, kq.tamTat);
+      return true;
+    } catch (loi) {
+      thongBaoNhanh('loi', 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.', true);
+      return false;
+    } finally {
+      cacNutKhoa.forEach((n) => { n.classList.remove('dang-gui'); if (n.isConnected) n.disabled = false; });
+    }
+  }
+
+  // Nút ⏸ Tắt / ▶ Bật trên từng dòng
+  $$('.form-bat-tat').forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nut = $('button', form);
+      if (nut.disabled) return;                 // đang gửi, bỏ qua bấm liên tiếp
+      guiBatTat(form, $('input[name="hanh_dong"]', form).value, [nut]);
+    });
+  });
+
+  // Thanh "Đã chọn N câu": Tắt / Bật gửi ngầm, Xóa thì hỏi lại rồi gửi bình thường
   const formXoaNhieu = $('#formXoaNhieu');
   if (formXoaNhieu) {
-    formXoaNhieu.addEventListener('submit', (e) => {
-      const so = oChon.filter((o) => o.checked).length;
+    formXoaNhieu.addEventListener('submit', async (e) => {
+      const so = layOChon().filter((o) => o.checked).length;
       const hanhDong = e.submitter ? e.submitter.value : '';
       if (!so) { e.preventDefault(); return; }
-      // Chỉ hỏi lại khi xóa; tắt / bật thì làm luôn (đổi lại được bất cứ lúc nào)
+      if (hanhDong === 'tat' || hanhDong === 'bat') {
+        e.preventDefault();
+        const thanhCong = await guiBatTat(formXoaNhieu, hanhDong, nutChonNhieu);
+        if (thanhCong) {
+          layOChon().forEach((o) => { o.checked = false; });
+          capNhatChon();
+        } else {
+          capNhatChon();
+        }
+        return;
+      }
       if (hanhDong === 'xoa' && !confirm('Xóa ' + so + ' câu hỏi đã chọn?\n\n(Có thể khôi phục lại ở mục Sao lưu.)')) e.preventDefault();
     });
   }
