@@ -235,6 +235,8 @@
 
   function taiLaiGiuViTri() {
     ghiNhoViTriCuon();
+    // Không để trình duyệt tự cuộn lại theo số pixel cũ (sẽ đè lên vị trí theo "câu mốc")
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     location.reload();
   }
 
@@ -246,6 +248,8 @@
   (function khoiPhucViTriCuon() {
     let daLuu = null;
     try { daLuu = JSON.parse(sessionStorage.getItem(KHOA_CUON) || 'null'); sessionStorage.removeItem(KHOA_CUON); } catch (loi) { daLuu = null; }
+    // Trả lại cho trình duyệt cách cuộn mặc định (cho những lần thầy cô tự bấm F5)
+    if ('scrollRestoration' in history) history.scrollRestoration = 'auto';
     if (!daLuu || Date.now() - daLuu.luc > 15000) return;
     let daCuon = false;
     if (daLuu.moc && daLuu.moc.cauHoi) {
