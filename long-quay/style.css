@@ -196,6 +196,9 @@ body::before {
   left: 50%;
   top: 40%;
   transform: translate(-50%, 0);
+  /* Rộng vừa nội dung (app.js giới hạn không quá bề ngang màn hình).
+     Nếu không có dòng này, thẻ đặt ở giữa sẽ bị bóp còn một nửa trên màn hình hẹp. */
+  width: max-content;
   max-width: 90vw;
   padding: 4px 36px 14px;
   text-align: center;
@@ -284,6 +287,121 @@ body::before {
 }
 
 .dap-an.hien-dap-an { visibility: visible; }
+
+/* Kết quả trả lời trắc nghiệm */
+.dap-an.tra-loi-dung { color: #128a3a; }
+.dap-an.tra-loi-sai  { color: #d62839; }
+
+/* ---------- 4 phương án trắc nghiệm ---------- */
+.cac-lua-chon {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.lua-chon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 2.2em;
+  padding: 6px 12px;
+  border: 3px solid #c9b8ff;
+  border-radius: 16px;
+  background: #fff;
+  color: #24124f;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: calc(clamp(19px, min(2.5vw, 3.6vh), 38px) * var(--co-chu-cau-hoi));
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #c9b8ff;
+  transition: transform 0.08s, background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.lua-chon:not(:disabled):hover { background: #fffbe6; border-color: var(--vang); }
+.lua-chon:not(:disabled):active { transform: translateY(3px); box-shadow: none; }
+.lua-chon:disabled { cursor: default; }
+
+/* Ô tròn chứa chữ A, B, C, D (mỗi chữ một màu như trò chơi truyền hình) */
+.chu-cai {
+  flex: 0 0 auto;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 900;
+}
+
+.lua-chon:nth-child(1) .chu-cai { background: #ff4757; }
+.lua-chon:nth-child(2) .chu-cai { background: #1e90ff; }
+.lua-chon:nth-child(3) .chu-cai { background: #2ed573; }
+.lua-chon:nth-child(4) .chu-cai { background: #ffa502; }
+
+/* Phương án đúng: xanh lá; phương án chọn sai: đỏ; các phương án khác: mờ đi */
+.lua-chon.dung {
+  background: #c9f7d6;
+  border-color: #23a455;
+  box-shadow: 0 4px 0 #23a455;
+  animation: nayVao 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+.lua-chon.sai {
+  background: #ffd3d8;
+  border-color: #d62839;
+  box-shadow: 0 4px 0 #d62839;
+  animation: lacLu 0.4s;
+}
+
+.lua-chon.mo { opacity: 0.45; }
+
+@keyframes lacLu {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+/* ---------- Ô chọn kiểu câu hỏi (trong bảng lịch sử) ---------- */
+.chon-kieu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--tim);
+}
+
+.chon-kieu select {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 10px;
+  border: 2px solid #c9b8ff;
+  color: var(--chu);
+  background: #fff;
+  cursor: pointer;
+}
+
+/* Kết quả trả lời trong bảng lịch sử */
+.thong-tin-luot .ket-qua-tl {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.ket-qua-tl.dung { background: #23a455; }
+.ket-qua-tl.sai  { background: #d62839; }
 
 .nut-the {
   display: flex;
@@ -498,6 +616,11 @@ body::before {
   .danh-sach-lich-su li { padding: 4px 8px; margin-bottom: 5px; }
 
   .bong-nho { width: 34px; height: 34px; font-size: 15px; }
+
+  /* Màn hình hẹp: 4 phương án xếp thành 1 cột */
+  .cac-lua-chon { grid-template-columns: 1fr; }
+  .the-ket-qua { padding: 4px 14px 10px; }
+  .khung-cau-hoi { padding: 6px 10px 8px; }
 
   .thanh-duoi { gap: 10px 12px; padding-bottom: 12px; }
 }

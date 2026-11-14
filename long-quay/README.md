@@ -61,14 +61,32 @@ var questions = [
 
 - `"cauHoi"` là câu hỏi, `"dapAn"` là đáp án. Câu không có đáp án cố định thì để `""`, khi đó nút "Xem đáp án" tự ẩn.
 - `"mon"` (môn học) không bắt buộc. Có ghi thì thẻ hiện "❓ Câu hỏi **Toán** dành cho bạn".
-- Mỗi bạn trúng nhận ngẫu nhiên **một câu chưa hỏi**. Hỏi hết mọi câu rồi thì mới quay lại dùng câu cũ.
-- File có sẵn **125 câu hỏi**, chia nhóm rõ ràng trong file:
-  - 25 câu hỏi chung (hiểu biết chung, năng khiếu)
-  - 35 câu **Toán lớp 5** (số thập phân, tỉ số phần trăm, đổi đơn vị, diện tích, thể tích, vận tốc)
-  - 35 câu **Tiếng Việt lớp 5** (từ đồng nghĩa, trái nghĩa, đồng âm, nhiều nghĩa, quan hệ từ, câu ghép, dấu câu, tục ngữ)
-  - 30 câu **Khoa học lớp 5** (chất và sự biến đổi, năng lượng, sinh sản của thực vật và động vật, sức khỏe, môi trường, vật liệu)
 
-  Thầy cô cứ sửa, xóa hoặc thêm câu tùy ý.
+**Câu trắc nghiệm (4 phương án, chọn 1)** viết thêm `"luaChon"` và `"dapAnDung"`:
+
+```js
+{ "mon": "Toán", "cauHoi": "1,5 giờ bằng bao nhiêu phút?",
+  "luaChon": ["90 phút", "150 phút", "105 phút", "15 phút"], "dapAnDung": "A" },
+```
+
+- `"luaChon"`: các phương án theo thứ tự A, B, C, D.
+- `"dapAnDung"`: chữ cái của phương án đúng (`"A"`, `"B"`, `"C"` hoặc `"D"`).
+- Trên màn hình, học sinh **bấm vào phương án**, hoặc thầy cô nhấn phím **A, B, C, D** (hay **1, 2, 3, 4**). Máy báo ngay **"Chính xác!"** (pháo hoa, tiếng nhạc) hoặc **"Chưa đúng"** (tô đỏ phương án sai, tô xanh đáp án đúng). Mỗi câu chỉ được chọn **một lần**.
+- Nút **👀 Xem đáp án** tô xanh đáp án đúng mà không tính đúng/sai cho bạn đó.
+- Bảng **"Đã quay"** ghi lại kết quả **✔ Đúng** / **✘ Sai** của từng bạn.
+
+**Chọn kiểu câu hỏi:** ở cuối bảng "Đã quay" có ô **Kiểu câu hỏi**: *Cả hai loại*, *Tự luận* hoặc *Trắc nghiệm*. Lựa chọn áp dụng từ lượt quay tiếp theo và được ghi nhớ cho lần mở sau.
+
+**Ngân hàng câu hỏi có sẵn: 225 câu**, chia nhóm rõ ràng trong file:
+
+| Loại | Chung | Toán lớp 5 | Tiếng Việt lớp 5 | Khoa học lớp 5 | Cộng |
+|---|---|---|---|---|---|
+| Tự luận | 25 | 35 | 35 | 30 | **125** |
+| Trắc nghiệm | – | 34 | 33 | 33 | **100** |
+
+- Mỗi bạn trúng nhận ngẫu nhiên **một câu chưa hỏi**. Hỏi hết mọi câu rồi thì mới quay lại dùng câu cũ.
+- Đáp án đúng của câu trắc nghiệm được rải đều ở A, B, C, D (mỗi chữ 25 câu) để học sinh không đoán theo quy luật.
+- Thầy cô cứ sửa, xóa hoặc thêm câu tùy ý.
 - **Đã có sẵn file `.json`?** Mở file đó, chép toàn bộ phần `[ ... ]` rồi dán thay vào sau chữ `var questions =` trong `questions.js`.
   (Khi mở `index.html` bằng cách nhấp đúp, trình duyệt không cho đọc thẳng file `.json`, nên phải để trong file `.js`.)
 - Muốn tắt phần câu hỏi: để danh sách trống, tức `var questions = [];`

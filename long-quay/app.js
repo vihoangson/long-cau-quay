@@ -101,6 +101,8 @@ const soTrung = $('soTrung');
 const tenTrung = $('tenTrung');
 const khungCauHoi = $('khungCauHoi');
 const nhanCauHoi = $('nhanCauHoi');
+const cacLuaChon = $('cacLuaChon');
+const chonKieuCauHoi = $('chonKieuCauHoi');
 const noiDungCauHoi = $('noiDungCauHoi');
 const dapAn = $('dapAn');
 const nutDapAn = $('nutDapAn');
@@ -139,6 +141,9 @@ function docDanhSachHocSinh() {
 }
 
 // Đọc biến "questions" (trong questions.js). Bỏ qua câu bị trống.
+// Có 2 loại câu hỏi:
+//  - Tự luận:    { "cauHoi": ..., "dapAn": ... }
+//  - Trắc nghiệm: { "cauHoi": ..., "luaChon": ["...", "...", "...", "..."], "dapAnDung": "B" }
 function docDanhSachCauHoi() {
   const goc = (typeof questions !== 'undefined' && Array.isArray(questions)) ? questions : [];
   const ketQua = [];
@@ -146,12 +151,38 @@ function docDanhSachCauHoi() {
     if (!c) return;
     // Cho phép viết câu hỏi dạng chữ trơn, hoặc dạng { "cauHoi": ..., "dapAn": ... }
     const cauHoi = typeof c === 'string' ? c.trim() : String(c.cauHoi || c.question || '').trim();
+    if (!cauHoi) return;
     const dap = typeof c === 'string' ? '' : String(c.dapAn || c.answer || '').trim();
     const mon = typeof c === 'string' ? '' : String(c.mon || '').trim();   // môn học (không bắt buộc)
-    if (cauHoi) ketQua.push({ cauHoi: cauHoi, dapAn: dap, mon: mon });
+    const cau = { cauHoi: cauHoi, dapAn: dap, mon: mon, luaChon: null, dapAnDung: -1 };
+
+    // Câu trắc nghiệm: có từ 2 đến 4 phương án và chỉ rõ phương án đúng
+    if (typeof c === 'object' && Array.isArray(c.luaChon)) {
+      const luaChon = c.luaChon.map((x) => String(x).trim()).filter((x) => x !== '').slice(0, 4);
+      const dung = viTriDapAnDung(c.dapAnDung, luaChon.length);
+      if (luaChon.length >= 2 && dung >= 0) {
+        cau.luaChon = luaChon;
+        cau.dapAnDung = dung;
+      }
+    }
+    ketQua.push(cau);
   });
   return ketQua;
 }
+
+// "A" → 0, "B" → 1, "C" → 2, "D" → 3 (cũng chấp nhận số 1, 2, 3, 4). Sai thì trả về −1.
+function viTriDapAnDung(giaTri, soLuaChon) {
+  let i = -1;
+  if (typeof giaTri === 'number') i = giaTri - 1;
+  else if (typeof giaTri === 'string') {
+    const chu = giaTri.trim().toUpperCase();
+    if (/^[A-D]$/.test(chu)) i = chu.charCodeAt(0) - 65;
+    else if (/^[1-4]$/.test(chu)) i = Number(chu) - 1;
+  }
+  return (i >= 0 && i < soLuaChon) ? i : -1;
+}
+
+const CHU_CAI = ['A', 'B', 'C', 'D'];
 
 
 /* =============================================================
@@ -198,6 +229,9 @@ let bongTrung = null;       // quả bóng trúng đang bay ra
 let bongBay = null;         // kết quả cũ đang bay vào bảng lịch sử
 let soChuaVaoBang = 0;      // số kết quả đã trúng nhưng chưa vào bảng
 let caoThe = 0;             // chiều cao thẻ kết quả (để chừa chỗ cho quả bóng lớn)
+let kieuCauHoi = 'tatCa';   // 'tatCa' | 'tuLuan' | 'tracNghiem' (chọn ở bảng lịch sử)
+let cauDangHoi = null;      // câu hỏi đang hiện trên thẻ
+let daTraLoi = false;       // câu trắc nghiệm đã được trả lời (hoặc đã xem đáp án) chưa
 let thoiGian = 0;           // đồng hồ chung của chương trình
 
 const manHinh = { rong: 0, cao: 0, dpr: 1 };
@@ -381,7 +415,7 @@ function doCaoThe() {
   let coLon = 1, coCauHoi = 1;
   datCoChuThe(coLon, coCauHoi);
   caoThe = theKetQua.offsetHeight;
-  while (caoThe > choToiDa && (coLon > 0.55 || coCauHoi > 0.7)) {
+  while (caoThe > choToiDa && (coLon > 0.55 || coCauHoi > 0.6)) {
     if (coLon > 0.55) coLon -= 0.05; else coCauHoi -= 0.05;
     datCoChuThe(coLon, coCauHoi);
     caoThe = theKetQua.offsetHeight;
@@ -639,16 +673,28 @@ function chonBongTrung() {
   capNhatNut();
 }
 
-// Bốc ngẫu nhiên một câu hỏi chưa hỏi. Hỏi hết rồi thì bắt đầu một vòng mới.
+// Lọc câu hỏi theo kiểu thầy cô chọn (cả hai / tự luận / trắc nghiệm)
+function locTheoKieu(ds) {
+  if (kieuCauHoi === 'tuLuan') return ds.filter((c) => !c.luaChon);
+  if (kieuCauHoi === 'tracNghiem') return ds.filter((c) => !!c.luaChon);
+  return ds;
+}
+
+// Bốc ngẫu nhiên một câu hỏi chưa hỏi. Hỏi hết rồi thì dùng lại câu cũ.
 function chonCauHoi() {
   if (CAU_HOI.length === 0) return null;
-  // Những câu đã hỏi trong "vòng" hiện tại (mỗi vòng dùng hết mọi câu một lần)
+  let nguon = locTheoKieu(CAU_HOI);
+  if (nguon.length === 0) nguon = CAU_HOI;        // không có câu loại đó thì lấy loại còn lại
   const daHoi = lichSu.map((l) => (l.cau ? l.cau.cauHoi : null)).filter((c) => c !== null);
-  const vongNay = daHoi.slice(daHoi.length - (daHoi.length % CAU_HOI.length));
-  let conLai = CAU_HOI.filter((c) => vongNay.indexOf(c.cauHoi) < 0);
-  if (conLai.length === 0) conLai = CAU_HOI.slice();
+  let conLai = nguon.filter((c) => daHoi.indexOf(c.cauHoi) < 0);
+  if (conLai.length === 0) {
+    // Đã hỏi hết: dùng lại, chỉ tránh câu vừa hỏi ở lượt trước
+    const cauVuaHoi = daHoi[daHoi.length - 1];
+    conLai = nguon.filter((c) => c.cauHoi !== cauVuaHoi);
+    if (conLai.length === 0) conLai = nguon.slice();
+  }
   const c = conLai[Math.floor(Math.random() * conLai.length)];
-  return { cauHoi: c.cauHoi, dapAn: c.dapAn, mon: c.mon };
+  return { cauHoi: c.cauHoi, dapAn: c.dapAn, mon: c.mon, luaChon: c.luaChon, dapAnDung: c.dapAnDung, kq: '' };
 }
 
 // Điền số, tên, câu hỏi vào thẻ kết quả rồi đo chiều cao của thẻ
@@ -656,20 +702,82 @@ function chuanBiThe(hsIndex, cau) {
   const hs = HOC_SINH[hsIndex];
   soTrung.textContent = 'Số ' + hs.so;
   tenTrung.textContent = hs.ten;
-  if (cau) {
+  cauDangHoi = cau;
+  daTraLoi = false;
+  cacLuaChon.textContent = '';
+  dapAn.classList.remove('hien-dap-an', 'tra-loi-dung', 'tra-loi-sai', 'an');
+  nutDapAn.disabled = false;
+  nutDapAn.textContent = '👀 Xem đáp án';
+
+  if (!cau) {
+    khungCauHoi.classList.add('an');
+    nutDapAn.classList.add('an');
+  } else if (cau.luaChon) {
+    // ----- Câu trắc nghiệm: vẽ các nút A, B, C, D -----
     khungCauHoi.classList.remove('an');
+    nhanCauHoi.textContent = '📝 Trắc nghiệm' + (cau.mon ? ' ' + cau.mon : '') + ': chọn 1 đáp án đúng';
+    noiDungCauHoi.textContent = cau.cauHoi;
+    cacLuaChon.classList.remove('an');
+    cau.luaChon.forEach((noiDung, i) => {
+      const nut = document.createElement('button');
+      nut.type = 'button';
+      nut.className = 'lua-chon';
+      const chu = document.createElement('span');
+      chu.className = 'chu-cai';
+      chu.textContent = CHU_CAI[i];
+      const chuNoiDung = document.createElement('span');
+      chuNoiDung.textContent = noiDung;
+      nut.appendChild(chu);
+      nut.appendChild(chuNoiDung);
+      nut.addEventListener('click', () => { nut.blur(); chonDapAn(i); });
+      cacLuaChon.appendChild(nut);
+    });
+    // Dòng này để hiện "Chính xác!" hoặc "Chưa đúng" (luôn giữ chỗ để thẻ không nhảy)
+    dapAn.textContent = '🎉 Chính xác!';
+    nutDapAn.classList.remove('an');
+  } else {
+    // ----- Câu tự luận -----
+    khungCauHoi.classList.remove('an');
+    cacLuaChon.classList.add('an');
     nhanCauHoi.textContent = cau.mon ? '❓ Câu hỏi ' + cau.mon + ' dành cho bạn' : '❓ Câu hỏi dành cho bạn';
     noiDungCauHoi.textContent = cau.cauHoi;
     dapAn.textContent = cau.dapAn ? '💡 Đáp án: ' + cau.dapAn : '';
-    dapAn.classList.remove('hien-dap-an');
     dapAn.classList.toggle('an', !cau.dapAn);
     nutDapAn.classList.toggle('an', !cau.dapAn);
-    nutDapAn.textContent = '👀 Xem đáp án';
-  } else {
-    khungCauHoi.classList.add('an');
-    nutDapAn.classList.add('an');
   }
   doCaoThe();
+}
+
+// Học sinh chọn một phương án trắc nghiệm (bấm chuột, hoặc phím A/B/C/D, 1/2/3/4)
+function chonDapAn(i) {
+  const cau = cauDangHoi;
+  if (!cau || !cau.luaChon || daTraLoi) return;
+  if (!bongTrung || bongTrung.giaiDoan !== 'xong') return;   // chỉ khi thẻ đang hiện
+  if (i < 0 || i >= cau.luaChon.length) return;
+  daTraLoi = true;
+  const dung = i === cau.dapAnDung;
+  danhDauLuaChon(i);
+  dapAn.classList.add('hien-dap-an', dung ? 'tra-loi-dung' : 'tra-loi-sai');
+  dapAn.textContent = dung
+    ? '🎉 Chính xác! Đáp án đúng là ' + CHU_CAI[cau.dapAnDung] + '.'
+    : '😅 Chưa đúng rồi! Đáp án đúng là ' + CHU_CAI[cau.dapAnDung] + ': ' + cau.luaChon[cau.dapAnDung];
+  nutDapAn.disabled = true;
+  if (dung) { tiengDung(); batDauPhaoHoa(); } else { tiengSai(); }
+
+  // Ghi kết quả đúng / sai vào lịch sử của lượt này
+  cau.kq = dung ? 'dung' : 'sai';
+  luuLichSu();
+}
+
+// Tô màu các nút: đáp án đúng màu xanh, nút chọn sai màu đỏ, còn lại mờ đi
+function danhDauLuaChon(daChon) {
+  const cacNut = cacLuaChon.querySelectorAll('.lua-chon');
+  cacNut.forEach((nut, k) => {
+    nut.disabled = true;
+    if (k === cauDangHoi.dapAnDung) nut.classList.add('dung');
+    else if (k === daChon) nut.classList.add('sai');
+    else nut.classList.add('mo');
+  });
 }
 
 // Bóng trúng: ra cửa → lăn xuống máng → bay lên phóng to
@@ -728,8 +836,19 @@ function hienKetQua() {
   capNhatNut();
 }
 
-// Bấm "Xem đáp án": hiện / ẩn đáp án
+// Bấm "Xem đáp án"
+//  - Câu tự luận: hiện / ẩn đáp án
+//  - Câu trắc nghiệm: tô xanh phương án đúng (không tính đúng hay sai cho bạn)
 function batTatDapAn() {
+  if (cauDangHoi && cauDangHoi.luaChon) {
+    if (daTraLoi) return;
+    daTraLoi = true;
+    danhDauLuaChon(-1);
+    dapAn.classList.add('hien-dap-an', 'tra-loi-dung');
+    dapAn.textContent = '💡 Đáp án đúng là ' + CHU_CAI[cauDangHoi.dapAnDung] + ': ' + cauDangHoi.luaChon[cauDangHoi.dapAnDung];
+    nutDapAn.disabled = true;
+    return;
+  }
   const dangHien = dapAn.classList.toggle('hien-dap-an');
   nutDapAn.textContent = dangHien ? '🙈 Ẩn đáp án' : '👀 Xem đáp án';
 }
@@ -773,6 +892,7 @@ function capNhatBongBay(dt) {
 }
 
 function anTheKetQua() {
+  cauDangHoi = null;
   theKetQua.classList.add('an');
   theKetQua.classList.remove('hien');
   theKetQua.style.transition = '';
@@ -1337,6 +1457,18 @@ function veHieuUng() {
    ============================================================= */
 
 const KHOA_LUU_TRU = 'longQuayXoSo_lichSu_v1';
+const KHOA_KIEU_CAU_HOI = 'longQuayXoSo_kieuCauHoi';
+
+// Đọc lại kiểu câu hỏi thầy cô đã chọn lần trước
+function taiKieuCauHoi() {
+  let giaTri = 'tatCa';
+  try { giaTri = window.localStorage.getItem(KHOA_KIEU_CAU_HOI) || 'tatCa'; } catch (loi) { /* bỏ qua */ }
+  if (['tatCa', 'tuLuan', 'tracNghiem'].indexOf(giaTri) < 0) giaTri = 'tatCa';
+  kieuCauHoi = giaTri;
+  chonKieuCauHoi.value = giaTri;
+  // Danh sách không có câu hỏi thì ẩn luôn ô chọn
+  chonKieuCauHoi.parentElement.classList.toggle('an', CAU_HOI.length === 0);
+}
 
 // Đọc lịch sử đã lưu. Chỉ giữ những bạn vẫn còn đúng số và đúng tên
 // trong students.js (nếu thầy cô sửa danh sách thì lịch sử cũ tự bỏ).
@@ -1354,7 +1486,10 @@ function taiLichSu() {
       const so = String(muc.so), ten = String(muc.ten);
       const i = HOC_SINH.findIndex((hs, k) => hs.so === so && hs.ten === ten && !ketQua.some((l) => l.hs === k));
       if (i < 0) return;
-      const cau = muc.cauHoi ? { cauHoi: String(muc.cauHoi), dapAn: String(muc.dapAn || ''), mon: String(muc.mon || '') } : null;
+      const cau = muc.cauHoi ? {
+        cauHoi: String(muc.cauHoi), dapAn: String(muc.dapAn || ''), mon: String(muc.mon || ''),
+        tracNghiem: !!muc.tracNghiem, kq: muc.kq === 'dung' || muc.kq === 'sai' ? muc.kq : ''
+      } : null;
       ketQua.push({ hs: i, cau: cau });
     });
   }
@@ -1370,7 +1505,9 @@ function luuLichSu() {
         ten: HOC_SINH[l.hs].ten,
         cauHoi: l.cau ? l.cau.cauHoi : '',
         dapAn: l.cau ? l.cau.dapAn : '',
-        mon: l.cau ? (l.cau.mon || '') : ''
+        mon: l.cau ? (l.cau.mon || '') : '',
+        tracNghiem: !!(l.cau && (l.cau.luaChon || l.cau.tracNghiem)),
+        kq: l.cau ? (l.cau.kq || '') : ''          // 'dung' | 'sai' | '' (chưa trả lời)
       }))
     };
     window.localStorage.setItem(KHOA_LUU_TRU, JSON.stringify(duLieu));
@@ -1415,7 +1552,15 @@ function veLichSu(coHieuUng) {
     if (luotNay.cau) {
       const cau = document.createElement('span');
       cau.className = 'cau-hoi-nho';
-      cau.textContent = '❓ ' + (luotNay.cau.mon ? luotNay.cau.mon + ': ' : '') + luotNay.cau.cauHoi;
+      const laTracNghiem = !!(luotNay.cau.luaChon || luotNay.cau.tracNghiem);
+      cau.textContent = (laTracNghiem ? '📝 ' : '❓ ') + (luotNay.cau.mon ? luotNay.cau.mon + ': ' : '') + luotNay.cau.cauHoi;
+      // Câu trắc nghiệm đã trả lời: ghi thêm "Đúng" hoặc "Sai"
+      if (luotNay.cau.kq) {
+        const nhan = document.createElement('span');
+        nhan.className = 'ket-qua-tl ' + luotNay.cau.kq;
+        nhan.textContent = luotNay.cau.kq === 'dung' ? '✔ Đúng' : '✘ Sai';
+        cau.appendChild(nhan);
+      }
       thongTin.appendChild(cau);
     }
 
@@ -1615,6 +1760,36 @@ function tiengTing() {
   phatNot(2093.0 * 2.76, t + 0.13, 0.45, 0.06);
 }
 
+// Trả lời đúng: ba nốt nhạc đi lên "tinh – tinh – ting"
+function tiengDung() {
+  const ac = amThanh.ctx;
+  if (!ac || CONFIG.amLuong <= 0) return;
+  const t = ac.currentTime + 0.02;
+  phatNot(1046.5, t, 0.35, 0.4);
+  phatNot(1318.5, t + 0.12, 0.35, 0.4);
+  phatNot(1568.0, t + 0.24, 0.9, 0.45);
+}
+
+// Trả lời sai: tiếng "bùm bụp" trầm đi xuống
+function tiengSai() {
+  const ac = amThanh.ctx;
+  if (!ac || CONFIG.amLuong <= 0) return;
+  const t = ac.currentTime + 0.02;
+  [0, 0.22].forEach((tre, k) => {
+    const osc = ac.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(k === 0 ? 330 : 247, t + tre);
+    osc.frequency.exponentialRampToValueAtTime(k === 0 ? 280 : 180, t + tre + 0.25);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t + tre);
+    g.gain.exponentialRampToValueAtTime(0.18, t + tre + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + tre + 0.28);
+    osc.connect(g); g.connect(amThanh.tong);
+    osc.start(t + tre);
+    osc.stop(t + tre + 0.3);
+  });
+}
+
 // Tiếng pháo nổ "bụp"
 function tiengNo() {
   const ac = amThanh.ctx;
@@ -1680,6 +1855,11 @@ function ganSuKien() {
   nutDongY.addEventListener('click', () => { dongHopThoai(); lamLaiTuDau(); });
   hopThoai.addEventListener('click', (e) => { if (e.target === hopThoai) dongHopThoai(); });
   nutDapAn.addEventListener('click', () => { nutDapAn.blur(); batTatDapAn(); });
+  chonKieuCauHoi.addEventListener('change', () => {
+    kieuCauHoi = chonKieuCauHoi.value;
+    try { window.localStorage.setItem(KHOA_KIEU_CAU_HOI, kieuCauHoi); } catch (loi) { /* bỏ qua */ }
+    chonKieuCauHoi.blur();                 // để phím cách (Space) lại dùng cho nút QUAY
+  });
   nutXong.addEventListener('click', () => { nutXong.blur(); guiKetQuaVaoBang(); });
 
   document.addEventListener('keydown', (e) => {
@@ -1688,6 +1868,17 @@ function ganSuKien() {
     if (!hopThoai.classList.contains('an')) {
       if (e.key === 'Escape') dongHopThoai();
       return;
+    }
+    // Đang hiện câu trắc nghiệm: phím A/B/C/D hoặc 1/2/3/4 để chọn đáp án
+    if (cauDangHoi && cauDangHoi.luaChon && !daTraLoi && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      const phim = (e.key || '').toUpperCase();
+      let i = CHU_CAI.indexOf(phim);
+      if (i < 0 && /^[1-4]$/.test(phim)) i = Number(phim) - 1;
+      if (i >= 0 && i < cauDangHoi.luaChon.length) {
+        e.preventDefault();
+        chonDapAn(i);
+        return;
+      }
     }
     if (e.code === 'Space' || e.key === ' ') {
       e.preventDefault();               // không cho trang cuộn hoặc bấm nhầm nút khác
@@ -1737,6 +1928,7 @@ function khoiDong() {
   capNhatGocNhin();
   lichSu = taiLichSu();
   luuLichSu();                  // ghi lại bản đã lọc sạch
+  taiKieuCauHoi();
   taoDanhSachBong(false);
   choBongNamYen();
   taiCacFileMp3();

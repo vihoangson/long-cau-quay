@@ -20,6 +20,15 @@
   <aside class="bang-lich-su" id="bangLichSu">
     <h2>📜 Đã quay <span id="soDaQuay">(0)</span></h2>
     <ol class="danh-sach-lich-su" id="danhSachLichSu"></ol>
+    <!-- Chọn kiểu câu hỏi cho các lượt sau -->
+    <label class="chon-kieu">
+      <span>Kiểu câu hỏi:</span>
+      <select id="chonKieuCauHoi">
+        <option value="tatCa">Cả hai loại</option>
+        <option value="tuLuan">Tự luận</option>
+        <option value="tracNghiem">Trắc nghiệm</option>
+      </select>
+    </label>
   </aside>
 
   <!-- Thẻ hiện kết quả trúng thưởng -->
@@ -32,6 +41,8 @@
     <div class="khung-cau-hoi" id="khungCauHoi">
       <div class="nhan-cau-hoi" id="nhanCauHoi">❓ Câu hỏi dành cho bạn</div>
       <div class="noi-dung-cau-hoi" id="noiDungCauHoi">Nội dung câu hỏi</div>
+      <!-- 4 phương án A, B, C, D (chỉ có ở câu trắc nghiệm) -->
+      <div class="cac-lua-chon an" id="cacLuaChon"></div>
       <div class="dap-an" id="dapAn">Đáp án</div>
     </div>
 
