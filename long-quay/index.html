@@ -10,6 +10,15 @@
   <!-- Canvas vẽ lồng quay, chân đỡ, bóng -->
   <canvas id="canvasLong"></canvas>
 
+  <!-- Nút về trang chủ: chỉ hiện khi trang được mở qua máy chủ web (http/https).
+       Mở bằng cách nhấp đúp file thì không có trang chủ PHP nên ẩn đi. -->
+  <a class="nut-trang-chu" id="nutTrangChu" href="../" title="Về trang chủ" hidden>🏠 <span class="chu-nut">Trang chủ</span></a>
+  <script>
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+      document.getElementById('nutTrangChu').hidden = false;
+    }
+  </script>
+
   <!-- Thanh tiêu đề phía trên -->
   <header class="thanh-tren" id="thanhTren">
     <h1>🎡 Lồng Quay May Mắn</h1>

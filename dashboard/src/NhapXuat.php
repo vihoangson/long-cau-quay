@@ -45,8 +45,19 @@ final class NhapXuat
         }
     }
 
+    /** File Excel (.xlsx) thực chất là file nén zip, nên PHP cần bật extension "zip". */
+    private static function canZip(): void
+    {
+        if (!class_exists(\ZipArchive::class)) {
+            throw new RuntimeException('PHP đang chạy trang này chưa bật extension "zip" nên chưa đọc/ghi được file Excel. '
+                . 'Mở file php.ini (' . (php_ini_loaded_file() ?: 'php.ini') . '), bỏ dấu ; trước dòng "extension=zip" rồi khởi động lại server. '
+                . 'Trong lúc chờ, có thể dùng CSV hoặc JSON.');
+        }
+    }
+
     private static function docXlsx(string $duongDan): array
     {
+        self::canZip();
         $xlsx = SimpleXLSX::parse($duongDan);
         if (!$xlsx) {
             throw new RuntimeException('Không đọc được file Excel: ' . SimpleXLSX::parseError());
@@ -244,6 +255,7 @@ final class NhapXuat
     /** Tạo file Excel. $chiLaMau = true: file mẫu trống, chỉ có 2 dòng ví dụ. */
     public static function taoExcel(array $danhSach, bool $chiLaMau = false): SimpleXLSXGen
     {
+        self::canZip();
         $tieuDe = array_map(
             static fn($t) => '<style bgcolor="#6B3FE0" color="#FFFFFF"><b><middle>' . htmlspecialchars($t, ENT_XML1) . '</middle></b></style>',
             self::TIEU_DE_COT

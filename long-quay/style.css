@@ -599,6 +599,34 @@ body::before {
 
 /* Lớp dùng chung để ẩn phần tử */
 .an { display: none !important; }
+[hidden] { display: none !important; }
+
+/* ---------- Nút về trang chủ (góc trên bên trái) ---------- */
+.nut-trang-chu {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--tim);
+  font-weight: 800;
+  font-size: 16px;
+  text-decoration: none;
+  box-shadow: 0 4px 0 #c9b8ff, 0 6px 14px rgba(60, 20, 120, 0.2);
+  transition: transform 0.1s, background 0.2s;
+}
+
+.nut-trang-chu:hover { background: #fff; transform: translateY(-1px); }
+.nut-trang-chu:active { transform: translateY(3px); box-shadow: 0 1px 0 #c9b8ff; }
+.nut-trang-chu:focus-visible { outline: 4px solid #fff; outline-offset: 3px; }
+
+/* Đang chiếu toàn màn hình thì ẩn nút, tránh bấm nhầm rời trang */
+:root:fullscreen .nut-trang-chu { display: none; }
 
 /* ---------- Màn hình hẹp (điện thoại, cửa sổ nhỏ) ---------- */
 @media (max-width: 820px) {

@@ -350,10 +350,7 @@ final class KhoCauHoi
     public function ghi(array $danhSach, string $phienBanCu, string $lyDo): void
     {
         $this->damBaoThuMucSaoLuu();
-        $khoa = fopen($this->thuMucSaoLuu . '/.khoa', 'c');
-        if ($khoa === false || !flock($khoa, LOCK_EX)) {
-            throw new RuntimeException('Không khóa được file để ghi. Hãy thử lại.');
-        }
+        $khoa = $this->giuKhoaGhi();
         try {
             if ($phienBanCu !== $this->phienBanHienTai()) {
                 throw new RuntimeException(self::LOI_PHIEN_BAN);
@@ -370,6 +367,54 @@ final class KhoCauHoi
             flock($khoa, LOCK_UN);
             fclose($khoa);
         }
+    }
+
+    /**
+     * Giành quyền ghi (khóa) để hai lần lưu cùng lúc không ghi đè lên nhau.
+     * - Thử lại trong tối đa 5 giây (đề phòng lần lưu khác hoặc phần mềm diệt virus
+     *   đang giữ file trong chốc lát).
+     * - Không mở được file khóa trong thư mục sao lưu thì dùng file khóa dự phòng
+     *   trong thư mục tạm của hệ thống.
+     * - Vẫn không được thì báo rõ lý do thật (và ghi vào log của PHP).
+     *
+     * @return resource
+     */
+    private function giuKhoaGhi()
+    {
+        $cacFileKhoa = [
+            $this->thuMucSaoLuu . '/.khoa',
+            rtrim(sys_get_temp_dir(), '/\\') . '/long-quay-' . md5((string) (realpath($this->duongDanFile) ?: $this->duongDanFile)) . '.khoa',
+        ];
+        $cacLyDo = [];
+        foreach ($cacFileKhoa as $duongDan) {
+            $tep = @fopen($duongDan, 'c');
+            if ($tep === false) {
+                $cacLyDo[] = 'không mở được "' . $duongDan . '" (' . (error_get_last()['message'] ?? 'không rõ lý do') . ')';
+                continue;
+            }
+            $hetHan = microtime(true) + 5;
+            do {
+                $dangBiGiu = 0;
+                if (@flock($tep, LOCK_EX | LOCK_NB, $dangBiGiu)) {
+                    return $tep;
+                }
+                if (!$dangBiGiu) {
+                    // Lỗi thật của hệ thống (không phải do đang bị giữ) → thử chỗ khác
+                    $cacLyDo[] = 'không khóa được "' . $duongDan . '" (' . (error_get_last()['message'] ?? 'không rõ lý do') . ')';
+                    break;
+                }
+                usleep(100000);
+            } while (microtime(true) < $hetHan);
+            fclose($tep);
+            if (!empty($dangBiGiu)) {
+                // Có một lần lưu khác đang giữ khóa: KHÔNG chuyển sang file khóa khác,
+                // vì như vậy hai lần lưu sẽ cùng ghi và làm hỏng dữ liệu.
+                throw new RuntimeException('Đang có một lần lưu khác chưa xong (đã chờ 5 giây). Hãy đợi vài giây rồi bấm lưu lại.');
+            }
+        }
+        error_log('[Quản lý câu hỏi] Không khóa được file để ghi: ' . implode('; ', $cacLyDo));
+        throw new RuntimeException('Không khóa được file để ghi: ' . implode('; ', $cacLyDo)
+            . '. Hãy kiểm tra quyền ghi của thư mục dashboard/backups, hoặc phần mềm diệt virus đang chặn.');
     }
 
     /** Sắp xếp: tự luận trước, trắc nghiệm sau; trong mỗi phần nhóm theo môn. Giữ thứ tự gốc trong cùng nhóm. */
