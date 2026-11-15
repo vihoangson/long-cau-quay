@@ -74,6 +74,13 @@ const CONFIG = {
     chucMung: '',  // tiếng chúc mừng / hoan hô khi hiện tên
     quay: 'am-thanh/quay.mp3'   // tiếng lồng quay: muốn dùng thì ghi 'am-thanh/quay.mp3' (để trống = dùng tiếng lạch cạch có sẵn)
   },
+  // Nhạc nền: phát lặp lại, bật / tắt và chỉnh to nhỏ bằng các nút ở góc trên bên phải (phím M)
+  nhacNen: {
+    file: 'am-thanh/background.mp3',
+    tuPhat: true,              // true = mở trang là phát nhạc luôn (trừ khi thầy cô đã bấm tạm dừng trước đó)
+    amLuongMacDinh: 0.4,       // 0 tới 1, lần đầu mở trang
+    buocAmLuong: 0.1           // mỗi lần bấm − / + đổi bao nhiêu
+  },
 
   // --- Pháo hoa ---
   soPhaoHoa: 8,               // số quả pháo hoa mỗi lần trúng
@@ -136,6 +143,12 @@ const nutToanManHinh = $('nutToanManHinh');
 const hopThoai = $('hopThoai');
 const nutHuy = $('nutHuy');
 const nutDongY = $('nutDongY');
+const khungNhacNen = $('nhacNen');
+const nutNhacNen = $('nutNhacNen');
+const nutGiamNhac = $('nutGiamNhac');
+const nutTangNhac = $('nutTangNhac');
+const thanhAmLuongNhac = $('thanhAmLuongNhac');
+const soAmLuongNhac = $('soAmLuongNhac');
 
 const TAU = Math.PI * 2;   // một vòng tròn = 2 × 3,14
 
@@ -1814,6 +1827,112 @@ function capNhatMp3Quay() {
   return true;
 }
 
+// ---------- Nhạc nền ----------
+// Phát lặp lại suốt buổi. Bật/tắt và âm lượng được nhớ trong trình duyệt.
+// Trình duyệt không cho tự phát nhạc khi vừa mở trang, nên nếu lần trước đang bật
+// thì nhạc sẽ chạy lại ngay ở lần bấm chuột / nhấn phím đầu tiên.
+const KHOA_NHAC_NEN = 'longQuayXoSo_nhacNen';
+const nhacNen = { the: null, bat: false, amLuong: 0.4, loi: false, choLanBamDau: false };
+
+function luuNhacNen() {
+  try {
+    window.localStorage.setItem(KHOA_NHAC_NEN, JSON.stringify({ bat: nhacNen.bat, amLuong: nhacNen.amLuong }));
+  } catch (loi) { /* bỏ qua */ }
+}
+
+function khoiTaoNhacNen() {
+  const cd = CONFIG.nhacNen || {};
+  nhacNen.amLuong = kep(Number(cd.amLuongMacDinh) || 0.4, 0, 1);
+  nhacNen.choLanBamDau = cd.tuPhat !== false;    // mặc định: phát nhạc nền
+  let daLuu = null;
+  try { daLuu = JSON.parse(window.localStorage.getItem(KHOA_NHAC_NEN) || 'null'); } catch (loi) { daLuu = null; }
+  if (daLuu && typeof daLuu === 'object') {
+    if (Number.isFinite(Number(daLuu.amLuong))) nhacNen.amLuong = kep(Number(daLuu.amLuong), 0, 1);
+    nhacNen.choLanBamDau = daLuu.bat === true;   // lần trước đang bật → bật lại khi được phép
+  }
+
+  if (!cd.file) { khungNhacNen.classList.add('an'); return; }
+  const the = new Audio();
+  the.loop = true;
+  the.preload = 'auto';
+  the.volume = nhacNen.amLuong;
+  the.addEventListener('error', () => {
+    nhacNen.loi = true;
+    nhacNen.bat = false;
+    nhacNen.choLanBamDau = false;
+    veNutNhacNen();
+  });
+  // Bị dừng từ bên ngoài (ví dụ tai nghe rút ra) → cập nhật lại nút
+  the.addEventListener('pause', () => { if (nhacNen.bat && !the.ended) { nhacNen.bat = false; veNutNhacNen(); luuNhacNen(); } });
+  the.src = cd.file;
+  nhacNen.the = the;
+  veNutNhacNen();
+  // Thử phát ngay. Trình duyệt chặn (chưa có ai bấm) thì nhạc sẽ chạy ở lần bấm / nhấn phím đầu tiên.
+  if (nhacNen.choLanBamDau) phatNhacNen(false);
+}
+
+function veNutNhacNen() {
+  const phanTram = Math.round(nhacNen.amLuong * 100);
+  nutNhacNen.classList.toggle('dang-phat', nhacNen.bat);
+  nutNhacNen.setAttribute('aria-pressed', nhacNen.bat ? 'true' : 'false');
+  $('bieuTuongNhac').textContent = nhacNen.bat ? '⏸' : '▶';
+  nutNhacNen.title = nhacNen.loi
+    ? 'Không tìm thấy file nhạc nền (' + CONFIG.nhacNen.file + ')'
+    : (nhacNen.bat ? 'Tạm dừng nhạc nền (phím M)' : 'Phát nhạc nền (phím M)');
+  nutNhacNen.disabled = nhacNen.loi;
+  khungNhacNen.classList.toggle('loi', nhacNen.loi);
+  thanhAmLuongNhac.value = phanTram;
+  thanhAmLuongNhac.style.setProperty('--phan-tram', phanTram + '%');
+  soAmLuongNhac.textContent = phanTram + '%';
+  nutGiamNhac.disabled = nhacNen.amLuong <= 0;
+  nutTangNhac.disabled = nhacNen.amLuong >= 1;
+}
+
+// luuLai = false: lần tự phát lúc mở trang (không ghi đè lựa chọn của thầy cô)
+function phatNhacNen(luuLai) {
+  if (!nhacNen.the || nhacNen.loi) return;
+  nhacNen.bat = true;
+  nhacNen.choLanBamDau = false;
+  nhacNen.the.volume = nhacNen.amLuong;
+  const hua = nhacNen.the.play();
+  if (hua && hua.catch) {
+    hua.catch(() => {
+      // Trình duyệt chưa cho phát (chưa có ai bấm) → chờ lần bấm sau
+      nhacNen.bat = false;
+      nhacNen.choLanBamDau = true;
+      veNutNhacNen();
+    });
+  }
+  veNutNhacNen();
+  if (luuLai !== false) luuNhacNen();
+}
+
+function dungNhacNen() {
+  nhacNen.bat = false;
+  nhacNen.choLanBamDau = false;
+  if (nhacNen.the && !nhacNen.the.paused) nhacNen.the.pause();
+  veNutNhacNen();
+  luuNhacNen();
+}
+
+function batTatNhacNen() {
+  if (nhacNen.bat) dungNhacNen(); else phatNhacNen();
+}
+
+function datAmLuongNhac(giaTri) {
+  nhacNen.amLuong = Math.round(kep(giaTri, 0, 1) * 100) / 100;
+  if (nhacNen.the) nhacNen.the.volume = nhacNen.amLuong;
+  veNutNhacNen();
+  luuNhacNen();
+}
+
+// Lần bấm / nhấn phím đầu tiên: nếu lần trước đang bật nhạc thì phát lại
+function nhacNenSauLanBamDau(e) {
+  if (!nhacNen.choLanBamDau) return;
+  if (e && e.target && khungNhacNen.contains(e.target)) return;   // bấm vào chính nút nhạc thì để nút tự xử lý
+  phatNhacNen();
+}
+
 // ---------- Tiếng tự tạo bằng Web Audio ----------
 
 // Tiếng "cạch" ngắn: lọc tiếng xì cho còn một khoảng cao độ
@@ -1972,6 +2091,14 @@ function capNhatNutToanManHinh() {
 function ganSuKien() {
   // Lần bấm đầu tiên ở bất kỳ đâu → bật âm thanh
   document.addEventListener('pointerdown', khoiTaoAmThanh);
+  document.addEventListener('pointerdown', nhacNenSauLanBamDau);
+
+  // Nhạc nền: ▶/⏸, − / + và thanh kéo âm lượng
+  nutNhacNen.addEventListener('click', () => { nutNhacNen.blur(); batTatNhacNen(); });
+  nutGiamNhac.addEventListener('click', () => { nutGiamNhac.blur(); datAmLuongNhac(nhacNen.amLuong - CONFIG.nhacNen.buocAmLuong); });
+  nutTangNhac.addEventListener('click', () => { nutTangNhac.blur(); datAmLuongNhac(nhacNen.amLuong + CONFIG.nhacNen.buocAmLuong); });
+  thanhAmLuongNhac.addEventListener('input', () => datAmLuongNhac(Number(thanhAmLuongNhac.value) / 100));
+  thanhAmLuongNhac.addEventListener('change', () => thanhAmLuongNhac.blur());   // để phím cách lại dùng cho nút QUAY
 
   nutQuay.addEventListener('click', () => { nutQuay.blur(); batDauQuay(); });
   nutLamLai.addEventListener('click', () => { nutLamLai.blur(); moHopThoai(); });
@@ -1989,6 +2116,7 @@ function ganSuKien() {
 
   document.addEventListener('keydown', (e) => {
     khoiTaoAmThanh();
+    nhacNenSauLanBamDau(e);
     // Khi hộp xác nhận đang mở: chỉ nghe phím Esc
     if (!hopThoai.classList.contains('an')) {
       if (e.key === 'Escape') dongHopThoai();
@@ -2004,6 +2132,12 @@ function ganSuKien() {
         chonDapAn(i);
         return;
       }
+    }
+    // Phím M: bật / tạm dừng nhạc nền
+    if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.altKey && !e.metaKey && !e.repeat) {
+      e.preventDefault();
+      batTatNhacNen();
+      return;
     }
     if (e.code === 'Space' || e.key === ' ') {
       e.preventDefault();               // không cho trang cuộn hoặc bấm nhầm nút khác
@@ -2058,6 +2192,7 @@ function khoiDong() {
   taoDanhSachBong(false);
   choBongNamYen();
   taiCacFileMp3();
+  khoiTaoNhacNen();
   ganSuKien();
   tinhBoCuc();
   veLichSu(false);

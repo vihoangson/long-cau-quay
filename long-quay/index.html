@@ -19,6 +19,15 @@
     }
   </script>
 
+  <!-- Nhạc nền (góc trên bên phải): phát / tạm dừng, chỉnh to nhỏ. File: am-thanh/background.mp3 -->
+  <div class="nhac-nen" id="nhacNen" role="group" aria-label="Nhạc nền">
+    <button type="button" class="nut-nhac" id="nutNhacNen" aria-pressed="false" aria-label="Phát / tạm dừng nhạc nền">🎵<span class="bieu-tuong-nhac" id="bieuTuongNhac">▶</span></button>
+    <button type="button" class="nut-am-luong" id="nutGiamNhac" title="Nhạc nhỏ hơn" aria-label="Giảm âm lượng nhạc nền">−</button>
+    <input type="range" class="thanh-am-luong" id="thanhAmLuongNhac" min="0" max="100" step="5" value="40" aria-label="Âm lượng nhạc nền">
+    <button type="button" class="nut-am-luong" id="nutTangNhac" title="Nhạc to hơn" aria-label="Tăng âm lượng nhạc nền">+</button>
+    <span class="so-am-luong" id="soAmLuongNhac" aria-hidden="true">40%</span>
+  </div>
+
   <!-- Thanh tiêu đề phía trên -->
   <header class="thanh-tren" id="thanhTren">
     <h1>🎡 Lồng Quay May Mắn</h1>

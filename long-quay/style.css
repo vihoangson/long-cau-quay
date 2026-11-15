@@ -660,6 +660,81 @@ body::before {
 /* Đang chiếu toàn màn hình thì ẩn nút, tránh bấm nhầm rời trang */
 :root:fullscreen .nut-trang-chu { display: none; }
 
+/* ---------- Nhạc nền (góc trên bên phải) ---------- */
+.nhac-nen {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 0 #c9b8ff, 0 6px 14px rgba(60, 20, 120, 0.2);
+  color: var(--tim);
+  font-weight: 800;
+}
+.nhac-nen button {
+  font: inherit;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  line-height: 1;
+}
+.nhac-nen button:disabled { opacity: 0.35; cursor: default; }
+.nut-nhac {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--tim);
+  color: #fff !important;
+  font-size: 17px;
+  box-shadow: 0 3px 0 #4d27b8;
+}
+.nut-nhac.dang-phat { background: linear-gradient(135deg, #ff2e7e, #ff9f1c); box-shadow: 0 3px 0 #c2185b; }
+.nut-nhac.dang-phat .bieu-tuong-nhac { animation: nhipNhac 0.9s ease-in-out infinite alternate; }
+@keyframes nhipNhac { from { transform: scale(1); } to { transform: scale(1.18); } }
+.nut-am-luong {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f1ebff;
+  font-size: 20px;
+}
+.nut-am-luong:hover:not(:disabled) { background: #e3d8ff; }
+.thanh-am-luong {
+  --phan-tram: 40%;
+  width: 96px;
+  height: 8px;
+  margin: 0 2px;
+  border-radius: 999px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: linear-gradient(90deg, var(--tim) 0 var(--phan-tram), #e2d8ff var(--phan-tram) 100%);
+  cursor: pointer;
+}
+.thanh-am-luong::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--tim);
+}
+.thanh-am-luong::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--tim);
+}
+.so-am-luong { min-width: 3em; text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; }
+.nhac-nen.loi .nut-am-luong, .nhac-nen.loi .thanh-am-luong, .nhac-nen.loi .so-am-luong { display: none; }
+
+/* Cửa sổ vừa: bỏ thanh kéo cho gọn, vẫn còn − / + */
+@media (max-width: 1200px) {
+  .thanh-am-luong { display: none; }
+}
+
 /* ---------- Màn hình hẹp (điện thoại, cửa sổ nhỏ) ---------- */
 @media (max-width: 820px) {
   .bang-lich-su {
@@ -690,6 +765,12 @@ body::before {
   /* Chừa chỗ cho nút 🏠 ở góc trái để không đè lên tiêu đề */
   .thanh-tren { padding-left: 62px; padding-right: 62px; }
   .nut-trang-chu { top: 10px; left: 10px; padding: 8px 11px; font-size: 20px; }
+  /* Nhạc nền: xếp dọc ở góc phải (▶ trên, + và − bên dưới), bỏ số % */
+  .nhac-nen { top: 10px; right: 10px; flex-direction: column; gap: 4px; padding: 4px; border-radius: 22px; }
+  .nhac-nen .nut-nhac { width: 44px; height: 40px; padding: 0; justify-content: center; font-size: 15px; gap: 0; }
+  .nhac-nen #nutTangNhac { order: 1; }
+  .nhac-nen #nutGiamNhac { order: 2; }
+  .so-am-luong { display: none; }
   .nut-quay { font-size: clamp(22px, 6.4vw, 34px); letter-spacing: 1px; }
 
   /* Đã có bóng, pháo hoa và tiếng chúc mừng nên ẩn dòng "Chúc mừng" để dành chỗ cho chữ */

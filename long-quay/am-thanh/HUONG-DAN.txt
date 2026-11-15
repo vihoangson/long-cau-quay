@@ -17,6 +17,16 @@ THƯ MỤC ÂM THANH
        sửa thành                          quay: 'am-thanh/quay.mp3'
    File này sẽ phát lặp lại trong lúc quay, to dần khi quay nhanh và nhỏ dần khi chậm lại.
 
+3) NHẠC NỀN (không bắt buộc)
+   Bỏ file nhạc vào thư mục này, đặt tên:  background.mp3
+   Trên trang quay số, góc trên bên phải có các nút:
+     🎵▶ / 🎵⏸   phát / tạm dừng nhạc nền (hoặc nhấn phím M)
+     −  +        nhạc nhỏ hơn / to hơn (máy tính còn có thanh kéo)
+   Trình duyệt nhớ lựa chọn bật/tắt và âm lượng. Trình duyệt không cho tự
+   phát nhạc ngay khi vừa mở trang, nên nếu lần trước đang bật thì nhạc sẽ
+   chạy lại ở lần bấm chuột hoặc nhấn phím đầu tiên.
+   Muốn dùng file khác: mở app.js, tìm dòng  file: 'am-thanh/background.mp3'
+
 Ghi chú: khi chưa bỏ file chuc-mung.mp3 vào, nếu mở cửa sổ kiểm tra lỗi của
 trình duyệt (phím F12) sẽ thấy một dòng báo "không tìm thấy file". Dòng này
 vô hại, chương trình vẫn chạy bình thường.
